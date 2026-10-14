@@ -78,6 +78,16 @@ Upload that zip as the LaTeX source if EM accepts a single archive. The archive 
 
 PNG figures are embedded in the compiled manuscript PDF. If EM refuses PNG uploads, export the same images to TIFF or EPS without changing the plots.
 
+## P0 revisions (14 October 2026)
+
+The scientific text is the same in `eswa_manuscript.tex` and `eswa_manuscript_anonymous.tex`. The review file still has no author name, affiliation, email, ORCID, funding sentence, or code URL. Shengchao Qin is a coauthor of Riachy et al. (2025), so the review bibliography contains that surname. `package_eswa_submission.py` checks Zhanpeng, ByteDance, the email, the ORCID, and the GitHub account. It does not treat the substring "qin" as an identity leak.
+
+- **Bibliography.** 41 entries. Journal DOIs added in this revision were read from Crossref on 14 October 2026. Three conference items already in the manuscript (LightGBM, PatchTST, N-BEATS) still have no DOI. Syntetos, Babai, and Gardner (2015) keeps the previous volume and pages; a guessed DOI was a different paper, so no DOI was added. Related Work and Table 1 (positioning) discuss Riachy et al. (2025), Vallés-Pérez et al. (2022), Long et al. (2025), Nathan et al. (2026), and Yılmaz Sucuoğlu et al. (2026), and separate this paper from Nathan and from Long: small daily coffee panel, direct horizons 1--7, sparsity covariates versus a split, and an explicit DeepAR/PatchTST/TFT comparison.
+- **Metrics.** The proposed model is best on MAE (2.411), R² (0.661), and direction hit (61.4%). Split models are best on WAPE (0.432 versus 0.452) and on sparse MAE (0.432 versus 0.452). MAE is the primary metric. The text states that WAPE is proportional to MAE on a shared sample, and that the four gradient-boosted WAPE entries match the sparse-MAE column. Those cells were not recomputed, and no error was replaced.
+- **Deployment.** The conclusion, the discussion, and the cover letter describe the point forecast, the conformal P10--P90 interval (80.6% coverage), and TreeSHAP. They do not say the system is in production and they do not claim a what-if study.
+- **Croston, SBA, TSB.** The protocol, the smoothing constants (α = 0.1, and β = 0.1 for TSB), and the recursions are in the manuscript. Every cell in that table is TODO. `python3 classical_baselines.py --self-check` checks the algebra. `python3 classical_baselines.py` exits 2 and writes no metrics, because `data/daily_sku_sales.csv` is not in the repository. No MAE was invented. The comparison figures were not redrawn.
+- **Limits.** Abstract still **225 words**. The four highlights are unchanged and still within 85 characters. Re-run `python3 package_eswa_submission.py` after any further edit; it recompiled the review PDF and the title page for this revision.
+
 ## Left out on purpose
 
 - `figures/fig5_per_window_stability.png` is not cited and is not in `submission/`. In `generate_figures.py` the series is marked as simulated placeholder data ("would come from actual backtest"), so the figure is not part of the reported results.

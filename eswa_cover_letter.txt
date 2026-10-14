@@ -6,13 +6,13 @@ I am pleased to submit my manuscript entitled "When Feature Engineering Outperfo
 
 Why ESWA?
 
-ESWA's emphasis on applied AI with substantive real-world validation makes it the right venue for this work. The paper presents an end-to-end forecasting system used in production for a New York City coffee shop chain, combining LightGBM, Tweedie loss, and sparsity-aware feature engineering to address a concrete inventory management problem. Unlike purely methodological papers that report benchmark-only results, this work shows operational relevance through uncertainty quantification (conformal-calibrated P10-P90 intervals at 80.6% coverage) and per-prediction TreeSHAP explainability.
+ESWA's emphasis on applied AI with substantive real-world validation makes it the right venue for this work. The manuscript evaluates a forecasting pipeline on a New York City coffee shop chain, combining LightGBM, Tweedie loss, and sparsity-aware feature engineering. The experiments support three operational outputs: a direct multi-step point forecast, conformal-calibrated P10-P90 intervals (80.6% coverage), and per-prediction TreeSHAP explanations. Those outputs can inform an inventory check. The manuscript does not report a production deployment or a what-if study.
 
 What makes this contribution novel?
 
-1. I provide the first systematic comparison in which a gradient-boosted tree model with 53 engineered features outperforms three state-of-the-art deep learning architectures (DeepAR, PatchTST, and TFT) by 23.0%, 15.2%, and 22.9% in MAE on small-scale intermittent retail demand data (239 SKU-store pairs, 181 days). This finding matters for retailers who operate at this scale rather than the thousands-of-series regimes common in benchmark datasets.
+1. On a small daily panel (239 store-product series, 181 days), a gradient-boosted tree model with 53 engineered features has lower MAE than DeepAR, PatchTST, and TFT, by 23.0%, 15.2%, and 22.9%. The comparison is for this short-history regime. The manuscript distinguishes it from large-scale retail gradient boosting (Long et al., 2025) and from aftermarket intermittent feature engineering (Nathan et al., 2026).
 
-2. I introduce a lightweight alternative to segment-specific modeling: injecting four per-SKU sparsity statistics as features into a unified global model simultaneously improves both sparse (-4.8% MAE) and dense (-1.1% MAE) SKU predictions, a result that conventional split-model approaches do not achieve.
+2. I introduce a lightweight alternative to segment-specific modeling. Injecting four per-SKU sparsity statistics into one global model improves both sparse (-4.8% MAE) and dense (-1.1% MAE) predictions relative to one direct model. On overall MAE, R^2, and direction hit, that model beats a sparse/dense split. The split remains better on sparse MAE and on WAPE (0.432 versus 0.452). MAE is the primary metric.
 
 3. The ablation study decomposes the performance gain and shows a counter-intuitive result: split models improve sparse accuracy but degrade dense accuracy because cross-segment information sharing is lost, whereas feature injection keeps the benefits of a unified model.
 

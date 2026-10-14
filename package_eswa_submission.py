@@ -39,9 +39,11 @@ TEXT_FILES = [
 ]
 
 # Strings that would identify the author if they appeared in the review file.
+# The bare surname "qin" is not listed. Riachy et al. (2025) include Shengchao Qin,
+# and a substring check would reject that citation. Identity is the given name,
+# the affiliation, the email, the ORCID, and the GitHub account.
 FORBIDDEN = [
     "zhanpeng",
-    "qin",
     "bytedance",
     "richardandelu",
     "gmail",

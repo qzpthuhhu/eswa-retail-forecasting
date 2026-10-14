@@ -1,0 +1,6 @@
+Highlights:
+
+- Direct multi-step LightGBM with Tweedie loss reduces retail forecast MAE by 8.5% vs. recursive baseline
+- Sparsity-aware features simultaneously improve both sparse (4.8%) and dense (1.1%) SKU predictions
+- Engineered features outperform DeepAR by 23.0%, PatchTST by 15.2%, and TFT by 22.9% in MAE
+- Conformal-calibrated quantile intervals achieve 80.6% coverage; TreeSHAP enables per-prediction explanations

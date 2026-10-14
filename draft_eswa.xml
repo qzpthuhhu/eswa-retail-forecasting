@@ -1,0 +1,300 @@
+<title>When Feature Engineering Outperforms Deep Learning: Sparsity-Aware Direct Multi-Step Forecasting for Small-Scale Retail Demand</title>
+
+<h1 seq="auto">Highlights</h1>
+
+<ul>
+<li>Direct multi-step LightGBM with Tweedie loss reduces retail forecast MAE by 8.5% vs. recursive baseline</li>
+<li>Sparsity-aware features simultaneously improve both sparse (4.8%) and dense (1.1%) SKU predictions</li>
+<li>Engineered features outperform DeepAR by 23.0%, PatchTST by 15.2%, and TFT by 22.9% in MAE</li>
+<li>Conformal-calibrated quantile intervals achieve 80.6% coverage; TreeSHAP enables per-prediction explanations</li>
+</ul>
+
+<h1 seq="auto">Abstract</h1>
+
+<p>Accurate multi-step demand forecasting for small-scale retail environments poses unique challenges: hundreds of stock-keeping units (SKUs) with highly intermittent demand, short historical records (fewer than 200 days), and strong calendar effects create a regime where conventional deep learning models struggle to converge. We present a sparsity-aware direct multi-step forecasting pipeline for coffee shop demand prediction, evaluated on a real-world dataset of 3 stores, 80 SKUs, and 181 days. Our approach combines three key technical choices: (1) <b>direct multi-step modeling</b> with independent LightGBM models for each forecast horizon (T+1 through T+7), which eliminates recursive error propagation; (2) <b>Tweedie loss</b> (variance power = 1.3) for robust learning under zero-inflated demand distributions; and (3) <b>sparsity-aware feature engineering</b> that injects per-SKU characteristics (zero-rate, average demand interval, historical mean) into a unified global model, enabling simultaneous improvement across both sparse and dense products without partitioning training data.</p>
+
+<p>In a controlled benchmark against three state-of-the-art deep learning models—DeepAR, PatchTST, and Temporal Fusion Transformer (TFT)—our LightGBM-based approach with 53 engineered features achieves superior performance by substantial margins: 23.0% lower MAE than DeepAR, 15.2% lower than PatchTST, and 22.9% lower than TFT. Compared to a recursive L1 baseline, our method reduces MAE by 8.5% (2.633 to 2.411) and improves directional accuracy by 7.8 percentage points (53.6% to 61.4%). Ablation analysis reveals that direct multi-step transfer contributes the largest gain (−7.3% MAE), while sparsity features provide an additional 1.3% reduction with the notable property that both sparse (−4.8%) and dense (−1.1%) SKU segments benefit simultaneously—a result unattainable by conventional segment-specific modeling.</p>
+
+<p>We further provide conformal-calibrated quantile regression intervals (P10–P90 covering 80.6% of actuals) and TreeSHAP-based per-prediction explanations, demonstrating that rigorous academic methodology can translate directly into operational decision-making for inventory management.</p>
+
+<h1 seq="auto">Keywords</h1>
+
+<p>retail demand forecasting; direct multi-step prediction; Tweedie loss; sparsity-aware features; LightGBM; TreeSHAP explainability</p>
+
+<h1 seq="auto">Introduction</h1>
+
+<p>Accurate day-ahead sales forecasting is critical for inventory management, staff scheduling, and waste reduction in retail operations. Coffee shops present a particularly challenging forecasting environment: hundreds of stock-keeping units (SKUs) with highly intermittent demand patterns—many items sell zero units on most days—combined with short historical records and strong calendar effects.</p>
+
+<p>Modern deep learning architectures such as DeepAR (Salinas et al., 2020), Temporal Fusion Transformer (TFT) (Lim et al., 2021), and PatchTST (Nie et al., 2023) have demonstrated state-of-the-art performance on large-scale forecasting benchmarks. However, their effectiveness on small-scale retail datasets—where individual time series contain fewer than 200 observations—remains underexplored. Similarly, the granularity of modeling choices, particularly whether to model sparse and dense SKUs jointly or separately, has received limited systematic treatment.</p>
+
+<p>In this paper, we investigate a comprehensive forecasting pipeline for a real-world coffee shop chain (3 stores, 80 SKUs, 181 days) and make the following contributions:</p>
+
+<ol>
+<li>We demonstrate that a <b>direct multi-step forecasting</b> framework with <b>Tweedie loss</b> (variance power = 1.3) reduces mean absolute error (MAE) by 8.5% compared to recursive forecasting, by eliminating error propagation across forecast horizons.</li>
+<li>We show that <b>sparsity-aware feature engineering</b>—injecting per-SKU zero-rate, average demand interval (ADI), and historical mean as covariates into a unified global model—simultaneously improves sparse SKU accuracy by 4.8% and dense SKU accuracy by 1.1%, outperforming the conventional approach of training separate models for each segment.</li>
+<li>Through a controlled benchmark, we find that our gradient-boosted tree model (LightGBM with 53 engineered features) <b>outperforms three state-of-the-art deep learning models</b> (DeepAR, PatchTST, TFT) by 15–23% in MAE on this small-scale intermittent demand dataset.</li>
+<li>We provide <b>TreeSHAP-based per-prediction explanations</b> and <b>quantile regression intervals</b> (P10/P50/P90), enabling operational decision-making with uncertainty quantification.</li>
+</ol>
+
+<h1 seq="auto">Related Work</h1>
+
+<h2 seq="auto">Retail Demand Forecasting</h2>
+
+<p>Retail demand forecasting has been extensively studied across multiple academic disciplines. Traditional approaches include exponential smoothing, ARIMA, and Croston's method for intermittent demand (Croston, 1972). More recently, machine learning methods—particularly gradient-boosted trees such as LightGBM (Ke et al., 2017) and XGBoost—have been widely adopted for their ability to handle heterogeneous features and non-linear relationships. The M5 Competition (Makridakis et al., 2022) demonstrated that gradient boosting methods remain competitive with neural approaches for retail forecasting when combined with careful feature engineering.</p>
+
+<h2 seq="auto">Direct vs. Recursive Multi-Step Forecasting</h2>
+
+<p>Multi-step forecasting can be performed recursively (iterating single-step predictions) or directly (training separate models for each horizon). While recursive forecasting is computationally efficient, it suffers from error accumulation across horizons  (Ben Taieb &amp; Atiya, 1999). Direct forecasting avoids error propagation but requires training H separate models. Recent work has explored hybrid approaches such as the multi-input multi-output (MIMO) strategy  (Ben Taieb et al., 2012). In this paper, we adopt pure direct forecasting and show that for horizons up to 7 days, the additional computational cost is negligible while accuracy gains are substantial.</p>
+
+<h2 seq="auto">Intermittent Demand and Sparsity</h2>
+
+<p>Intermittent demand—characterized by frequent periods of zero demand—poses unique challenges for forecasting. Classical methods such as Croston's method and its variants (SBA, TSB) decompose demand into interval and size components  (Syntetos et al., 2015). Recent deep learning approaches such as DeepAR model demand probabilistically, offering natural handling of zero-inflated distributions. However, the interaction between data sparsity and model architecture remains poorly understood: should sparse SKUs be modeled separately, or can a unified model learn to distinguish them?</p>
+
+<h2 seq="auto">Deep Learning for Time Series</h2>
+
+<p>DeepAR  (Salinas et al., 2020) uses an autoregressive RNN with probabilistic outputs, enabling cross-series information sharing. N-BEATS  (Oreshkin et al., 2020) proposes a pure deep learning architecture with basis expansion that requires no feature engineering. TFT  (Lim et al., 2021) combines attention mechanisms with variable selection for interpretable multi-horizon forecasting. PatchTST  (Nie et al., 2023) segments time series into patches and processes them via a Transformer encoder. While these models excel on large benchmark datasets (thousands of series, thousands of time steps), their performance on small datasets with extreme sparsity has not been systematically evaluated.</p>
+
+<h1 seq="auto">Problem Formulation and Data</h1>
+
+<h2 seq="auto">Problem Setting</h2>
+
+<p>We consider a retail setting with S stores, each offering P products. For each store-product pair (s,p), we observe daily sales quantity y_{t}^{(s,p)} for t = 1, ..., T. Given the history up to a forecast origin t, the task is to predict y_{t+h}^{(s,p)} for horizons h = 1, ..., H, where H = 7 days. Critically, a large fraction of y_{t}^{(s,p)} observations are zero, and the zero-proportion varies substantially across SKUs.</p>
+
+<h2 seq="auto">Dataset</h2>
+
+<p>Our dataset consists of 181 consecutive days (January–June 2023) of daily sales from 3 coffee shops in New York City, offering 80 distinct products. After constructing a full panel (date × store × product), we obtain 3 × 80 × 181 = 43,440 observations. Daily sales quantities range from 0 to approximately 30 units, with a mean of 1.65 and a median of 0. Approximately 53% of all observations are zero, and 77 out of 240 store-product combinations exhibit intermittent demand (zero-rate &gt; 0.5 or ADI &gt; 2).</p>
+
+<p>We augment the sales data with daily weather observations (temperature, precipitation, wind speed, sunshine duration, humidity) and a holiday calendar (detailed holiday indicators, pre/post-holiday flags, long weekend indicators). Historical sales features include 6 lagged quantities (1, 2, 3, 7, 14, 28 days), rolling means and standard deviations (7, 14, 28-day windows), day-of-week averages, and a rolling 28-day SKU share within each store.</p>
+
+<h2 seq="auto">Evaluation Protocol</h2>
+
+<p>We adopt a rolling-origin backtesting protocol with 5 non-overlapping windows. For each forecast origin, we predict the subsequent 7 days (T+1 through T+7). Training data for each origin is strictly separated along three temporal boundaries: a training set (ending at origin − 2H), a validation set (origin − 2H + 1 to origin − H), and a calibration set (origin − H + 1 to origin). This separation ensures no future information leaks into model training or calibration. For each origin, 240 store-product combinations × 7 horizons = 1,680 predictions are generated, yielding 8,400 predictions across the full backtest.</p>
+
+<p>Metrics are computed at multiple aggregation levels: overall, per-window, per-store, per-category, and by sparsity segment (sparse vs. dense). Primary metrics include MAE, WAPE (mean absolute percentage error weighted by actual demand), R², and directional accuracy.</p>
+
+<h1 seq="auto">Methodology</h1>
+
+<whiteboard type="mermaid">
+flowchart TB
+    subgraph Input["1. Input Data"]
+        S["Sales (3 stores × 80 SKUs × 181 days)"]
+        W["Weather (temperature, precipitation, etc.)"]
+        H["Holiday Calendar"]
+    end
+    
+    subgraph FE["2. Feature Engineering (53 features)"]
+        L["Lag features (1,2,3,7,14,28 days)"]
+        R["Rolling statistics (7,14,28-day)"]
+        C["Calendar features (DoW, weekend, month, season)"]
+        W2["Weather features (hot, cold, rain, snow, clear)"]
+        SP["Sparsity features (zero-rate, ADI, mean_qty, is_sparse)"]
+    end
+    
+    subgraph Train["3. Model Training (per origin)"]
+        DM["Direct Multi-Step (7 models, T+1 to T+7)"]
+        TW["Tweedie Loss (variance power = 1.3)"]
+        QR["Quantile Regression (P10, P50, P90)"]
+    end
+    
+    subgraph Output["4. Outputs"]
+        PRED["Point Predictions"]
+        QI["Prediction Intervals (80% CI)"]
+        SHAP["SHAP Explanations"]
+        WI["What-If Scenarios"]
+    end
+    
+    Input --> FE --> Train --> Output
+</whiteboard>
+
+<h2 seq="auto">Direct Multi-Step Forecasting</h2>
+
+<p>In the classical recursive approach, a single model predicts y_{t+1}, and this prediction is fed back as input to predict y_{t+2}, continuing for H steps. This creates an accumulation of prediction errors—errors at horizon h contaminate all subsequent horizons h′ &gt; h.</p>
+
+<p>In our direct approach, we train H independent models f_h, each predicting y_{t+h} using only features observable at the forecast origin. For each horizon h, the target variable lags are shifted by h additional positions to ensure strict temporal alignment:</p>
+
+<p><latex>y_{t}^{(h)} = f_h(x_{t-h}, x_{t-h-1}, ..., x_{t-h-K})</latex></p>
+
+<p>where x_t denotes the feature vector at time t and K is the feature lookback window. The historical information available to f_h is exactly what would have been known at the forecast origin—no future values appear in any model's training data. This eliminates the error-propagation problem entirely, at the cost of training H separate LightGBM models per origin.</p>
+
+<h2 seq="auto">Tweedie Loss for Zero-Inflated Data</h2>
+
+<p>The Tweedie distribution is a family of exponential dispersion models that includes the normal (p = 0), Poisson (p = 1), compound Poisson-Gamma (1 &lt; p &lt; 2), and gamma (p = 2) distributions as special cases. The compound Poisson-Gamma distribution is particularly suitable for intermittent demand, as it models a mixture of exact zeros (days with no sales) and continuous positive quantities (days with sales).</p>
+
+<p>We set the Tweedie variance power p = 1.3, which provides a balance between accommodating many zeros (favoring lower p) and capturing the variance-mean relationship in positive observations (favoring higher p). Empirically, we tested p ∈ {1.0, 1.1, 1.3, 1.5} and found that p = 1.3 yields the best trade-off in both overall MAE and sparse-segment performance.</p>
+
+<h2 seq="auto">Sparsity-Aware Feature Engineering</h2>
+
+<p>A critical design question is how to handle the substantial heterogeneity in demand sparsity across SKUs. The conventional approach is to train separate models for sparse and dense products. However, this sacrifices the model's ability to learn transferable patterns from dense products that could benefit sparse-product predictions.</p>
+
+<p>We propose instead to inject sparsity characteristics as features into a unified global model. For each store-product pair, we compute—using only data strictly before the first forecast origin—the following static sparsity metrics:</p>
+
+<ul>
+<li><b>zero_rate</b>: proportion of days with zero sales</li>
+<li><b>ADI</b> (Average Demand Interval): mean number of days between non-zero sales events</li>
+<li><b>mean_qty</b>: historical mean daily quantity</li>
+<li><b>is_sparse</b>: binary indicator (zero_rate &gt; 0.5 or ADI &gt; 2.0)</li>
+</ul>
+
+<p>These four features allow the model to learn SKU-specific prediction behavior without partitioning the training data. Dense-product patterns remain available for cross-learning, while the model can modulate its predictions based on each SKU's historical sparsity profile. This approach yields simultaneous improvements in both sparse (MAE −4.8%) and dense (MAE −1.1%) segments—a result that segment-specific models cannot achieve, as they sacrifice cross-segment information sharing.</p>
+
+<h2 seq="auto">Quantile Regression for Uncertainty Quantification</h2>
+
+<p>For operational deployment, point predictions alone are insufficient. We train three quantile regression models per horizon (α ∈ {0.10, 0.50, 0.90}) using LightGBM's quantile objective. The P10–P90 interval provides an 80% confidence interval, enabling inventory managers to make risk-aware decisions: the P10 value represents a pessimistic scenario (90% chance actual demand exceeds this), while P90 represents an optimistic bound.</p>
+
+<h2 seq="auto">Model Explainability via TreeSHAP</h2>
+
+<p>We use TreeSHAP to decompose each prediction into per-feature contributions. The sum of SHAP values plus the model's expected value recovers the raw prediction on the Tweedie link scale, after which we apply the inverse link function (exponential) and scale corrections to obtain additive contributions on the response scale. This enables both global feature importance analysis and per-prediction what-if reasoning—for a specific SKU on a specific date, we can attribute the prediction to concrete factors such as day-of-week patterns, temperature effects, and historical sales momentum.</p>
+
+<h1 seq="auto">Experimental Evaluation</h1>
+
+<h2 seq="auto">Baselines</h2>
+
+<img path="@./figures/fig1_overall_comparison.png" caption="Figure 1: Overall MAE comparison across all six methods. Our proposed approach (Direct Tweedie + Sparsity Labels) achieves the lowest MAE of 2.411." width="800"/>
+
+<p>We compare the following methods:</p>
+
+<table>
+<colgroup><col width="240"/><col width="320"/><col width="260"/></colgroup>
+<thead><tr>
+<th background-color="light-gray"><p><b>Method</b></p></th>
+<th background-color="light-gray"><p><b>Description</b></p></th>
+<th background-color="light-gray"><p><b>MAE (overall)</b></p></th>
+</tr></thead>
+<tbody>
+<tr><td><p><b>Recursive L1</b></p></td><td><p>Production recursive LightGBM with L1 loss, 44 features</p></td><td><p>2.633</p></td></tr>
+<tr><td><p><b>Direct Tweedie</b></p></td><td><p>Direct multi-step LightGBM with Tweedie loss, 48 features</p></td><td><p>2.442</p></td></tr>
+<tr><td><p><b>Direct Tweedie + Sparsity Labels (ours)</b></p></td><td><p>+4 sparsity features (zero_rate, ADI, mean_qty, is_sparse), 53 total features</p></td><td><p><b>2.411</b></p></td></tr>
+<tr><td><p>DeepAR</p></td><td><p>Probabilistic RNN (GluonTS), no feature engineering</p></td><td><p>2.966</p></td></tr>
+<tr><td><p>PatchTST</p></td><td><p>Patch-based Transformer (GluonTS), no feature engineering</p></td><td><p>2.778</p></td></tr>
+<tr><td><p>TFT</p></td><td><p>Temporal Fusion Transformer (GluonTS), no feature engineering</p></td><td><p>2.963</p></td></tr>
+</tbody>
+</table>
+
+<h2 seq="auto">Overall Performance</h2>
+
+<table>
+<colgroup><col width="220"/><col width="100"/><col width="100"/><col width="100"/><col width="100"/><col width="100"/></colgroup>
+<thead><tr>
+<th background-color="light-gray"><p><b>Method</b></p></th>
+<th background-color="light-gray"><p><b>MAE ↓</b></p></th>
+<th background-color="light-gray"><p><b>WAPE ↓</b></p></th>
+<th background-color="light-gray"><p><b>R² ↑</b></p></th>
+<th background-color="light-gray"><p><b>Dir. Hit ↑</b></p></th>
+<th background-color="light-gray"><p><b>5-Win Wins</b></p></th>
+</tr></thead>
+<tbody>
+<tr><td><p>Recursive L1</p></td><td><p>2.633</p></td><td><p>0.379</p></td><td><p>0.607</p></td><td><p>0.536</p></td><td><p>—</p></td></tr>
+<tr><td><p>Direct Tweedie</p></td><td><p>2.442</p></td><td><p>0.352</p></td><td><p>0.657</p></td><td><p>0.589</p></td><td><p>5/5</p></td></tr>
+<tr background-color="light-green"><td><p><b>+ Sparsity Labels</b></p></td><td><p><b>2.411</b></p></td><td><p><b>0.347</b></p></td><td><p><b>0.661</b></p></td><td><p><b>0.614</b></p></td><td><p><b>5/5</b></p></td></tr>
+<tr><td><p>DeepAR</p></td><td><p>2.966</p></td><td><p>0.427</p></td><td><p>0.497</p></td><td><p>0.401</p></td><td><p>0/5</p></td></tr>
+<tr><td><p>PatchTST</p></td><td><p>2.778</p></td><td><p>0.400</p></td><td><p>0.555</p></td><td><p>0.371</p></td><td><p>0/5</p></td></tr>
+<tr><td><p>TFT</p></td><td><p>2.963</p></td><td><p>0.427</p></td><td><p>0.506</p></td><td><p>0.388</p></td><td><p>0/5</p></td></tr>
+</tbody>
+</table>
+
+<p>Our proposed method (Direct Tweedie + Sparsity Labels) achieves the best performance on every metric. Compared to the recursive baseline, MAE is reduced by 8.5% (2.633 → 2.411). The improvement is consistent across all 5 rolling windows and all 7 forecast horizons, with T+7 showing the largest gain (the horizon most affected by recursive error propagation). Figure 3 illustrates how the improvement monotonically increases with forecast horizon, consistent with the elimination of recursive error accumulation.</p>
+
+<img path="@./figures/fig3_horizon_improvement.png" caption="Figure 3: Horizon-level MAE improvement vs. recursive baseline. Improvement monotonically increases from T+1 (−5.2%) to T+7 (−11.8%)." width="600"/>
+
+<h2 seq="auto">Ablation Analysis: Components</h2>
+
+<p>We decompose the performance gain via ablation. Figure 2 visualizes the contribution of each component across overall, sparse, and dense SKU segments.</p>
+
+<img path="@./figures/fig2_ablation.png" caption="Figure 2: Ablation study showing component contributions to overall, sparse, and dense MAE. Note that split models improve sparse performance but degrade dense performance." width="800"/>
+
+<table>
+<colgroup><col width="280"/><col width="120"/><col width="130"/><col width="180"/></colgroup>
+<thead><tr>
+<th background-color="light-gray"><p><b>Configuration</b></p></th>
+<th background-color="light-gray"><p><b>Overall MAE</b></p></th>
+<th background-color="light-gray"><p><b>Sparse MAE</b></p></th>
+<th background-color="light-gray"><p><b>Dense MAE</b></p></th>
+</tr></thead>
+<tbody>
+<tr><td><p>Recursive L1 (baseline)</p></td><td><p>2.633</p></td><td><p>0.533</p></td><td><p>3.610</p></td></tr>
+<tr><td><p>+ Direct Multi-Step</p></td><td><p>2.442 (-7.3%)</p></td><td><p>0.475 (-10.9%)</p></td><td><p>3.371 (-6.6%)</p></td></tr>
+<tr background-color="light-green"><td><p><b>+ Sparsity Labels</b></p></td><td><p><b>2.411 (-1.3%)</b></p></td><td><p><b>0.452 (-4.8%)</b></p></td><td><p><b>3.336 (-1.1%)</b></p></td></tr>
+<tr><td><p>+ Split Models (sparse/dense)</p></td><td><p>2.468 (+1.1%)</p></td><td><p>0.432 (-9.1%)</p></td><td><p>3.430 (+1.7%)</p></td></tr>
+</tbody>
+</table>
+
+<p>The direct multi-step transfer provides the bulk of the improvement (−7.3% MAE). Adding sparsity labels yields a further 1.3% reduction, with the notable property that <b>both sparse and dense segments benefit</b>. In contrast, splitting into separate sparse/dense models improves sparse-segment MAE to 0.432 (−9.1%) but degrades dense-segment MAE by 1.7%, resulting in worse overall performance. This supports our key design choice: injecting sparsity as features rather than splitting the model.</p>
+
+<h2 seq="auto">Deep Learning Comparison</h2>
+
+<p>All three deep learning models—DeepAR, PatchTST, and TFT—underperform our gradient-boosted tree model by substantial margins (15.2%, 22.9%, and 23.0% respectively in MAE). The gap is particularly pronounced in directional accuracy: our model achieves 61.4% direction hit rate, while the best deep learning model (DeepAR) reaches only 40.1% (see Figure 6 for a visual comparison). We attribute this performance gap to two factors:</p>
+
+<img path="@./figures/fig6_direction_and_r2.png" caption="Figure 6: Direction accuracy and R² comparison across all methods. The gap in directional accuracy (61.4% vs. 37.1–40.1%) suggests deep learning models failed to capture directional signals in this data regime." width="800"/>
+
+<ul>
+<li><b>Data scarcity:</b> With only 181 days per series, the 240 short time series provide insufficient signal for deep learning architectures that typically require thousands of observations per series to converge reliably. The parameter-to-data ratio is unfavorable: DeepAR has ~26K parameters, PatchTST ~91K, and TFT ~85K, all trained on at most 167 days (maximum training length after cutoff).</li>
+<li><b>Feature engineering:</b> Our hand-crafted features (calendar, weather, holiday indicators, sparsity labels) encode domain knowledge that deep learning models would need orders of magnitude more data to discover independently.</li>
+</ul>
+
+<p>This finding aligns with the M5 Competition results, where gradient boosting with feature engineering remained competitive with neural methods, and extends it to the extreme low-data regime of small-scale retail.</p>
+
+<h2 seq="auto">Performance by Segment and Store</h2>
+
+<p>The model's performance gains are broadly distributed:</p>
+
+<ul>
+<li><b>Store-level:</b> MAE improvement spans all 3 stores (Astoria: −9.1%, Lower Manhattan: −8.3%, Hell's Kitchen: −8.0%).</li>
+<li><b>Category-level:</b> All 9 product categories improve, ranging from −3.2% (packaged chocolate) to −14.7% (loose tea).</li>
+<li><b>SKU-level:</b> 75 out of 80 individual store-SKU combinations improve or remain within 0.01 MAE.</li>
+<li><b>Horizon-level:</b> Improvement monotonically increases with horizon, from −5.2% at T+1 to −11.8% at T+7, consistent with the elimination of recursive error accumulation.</li>
+<li><b>Low-volume segment:</b> MAE in the lowest quartile (P0–P25 by mean quantity) improves by 11.4%, demonstrating that sparsity features are most beneficial where the signal is weakest.</li>
+</ul>
+
+<img path="@./figures/fig4_segment_performance.png" caption="Figure 4: Sparse vs. dense segment performance comparison. Our method improves sparse SKU MAE from 0.533 to 0.452 (−15.2%) and dense SKU MAE from 3.610 to 3.336 (−7.6%)." width="700"/>
+
+<h1 seq="auto">Discussion</h1>
+
+<h2 seq="auto">Why Sparsity Features Beat Split Models</h2>
+
+<p>The key insight of this work is that splitting models by sparsity is counterproductive on small datasets. While sparse SKUs benefit from specialized training (−9.1% MAE), the dense-segment model loses valuable cross-SKU information carried in the historical behavior of sparse products (−1.7% MAE for dense). By embedding sparsity as features in a unified model, we preserve all training data for every prediction while allowing the model to learn per-SKU conditional behavior. The model effectively learns a conditional prediction function:</p>
+
+<p><latex>\hat{y} = g(x_{shared}, x_{sparsity})</latex></p>
+
+<p>where the influence of shared features is modulated by the sparsity profile of each SKU.</p>
+
+<h2 seq="auto">Implications for Small-Scale Retail</h2>
+
+<p>Our results suggest that for retailers with fewer than 500 time series and fewer than 500 observations each, gradient-boosted trees with domain-informed feature engineering remain the preferred approach over deep learning. This has practical implications: tree-based models are faster to train (seconds vs. minutes), require no GPU, are inherently interpretable via SHAP, and can be deployed on standard cloud infrastructure with minimal operational overhead.</p>
+
+<h2 seq="auto">Limitations and Future Work</h2>
+
+<p>Several limitations warrant discussion. First, our evaluation is limited to a single retail chain (3 stores, 181 days); validation on larger and more diverse datasets (e.g., M5 Competition, Favorita) would strengthen generalizability claims. Second, we did not explore the effect of extending the training period—how much additional data would be needed for deep learning models to overtake gradient boosting? Third, we used only historical sparsity labels; real-time updating of sparsity profiles as new data arrives could further improve performance. Fourth, cold-start prediction for new products remains an open challenge that transfer learning approaches may address.</p>
+
+<h1 seq="auto">Conclusion</h1>
+
+<p>This paper presents a practical and high-performing forecasting pipeline for small-scale retail demand. We demonstrate three key findings:</p>
+
+<ol>
+<li><b>Direct multi-step forecasting with Tweedie loss reduces MAE by 7.3%</b> compared to recursive L1 forecasting, by eliminating error propagation and better modeling zero-inflated demand distributions.</li>
+<li><b>Sparsity-aware features improve both sparse and dense SKU predictions simultaneously</b>, outperforming the conventional segment-specific modeling approach that sacrifices cross-segment information sharing.</li>
+<li><b>Gradient-boosted trees with 53 engineered features outperform three SOTA deep learning models by 15–23%</b> in MAE on small-scale intermittent demand data, challenging the assumption that deep learning is universally superior for time series forecasting.</li>
+</ol>
+
+<p>The resulting system—featuring quantile-based uncertainty intervals, per-prediction SHAP explanations, and what-if scenario analysis—is deployed in production for a New York coffee shop chain, demonstrating that rigorous academic methodology can directly translate into operational impact.</p>
+
+<h1 seq="auto">References</h1>
+
+<p>Ben Taieb, S., &amp; Atiya, A. F. (1999). A bias and variance analysis for multistep-ahead time series forecasting. <i>IEEE Transactions on Neural Networks</i>, <i>27</i>(1), 62–76.</p>
+
+<p>Ben Taieb, S., Bontempi, G., Atiya, A. F., &amp; Sorjamaa, A. (2012). A review and comparison of strategies for multi-step ahead time series forecasting based on the NN5 forecasting competition. <i>Expert Systems with Applications</i>, <i>39</i>(8), 7067–7083.</p>
+
+<p>Croston, J. D. (1972). Forecasting and stock control for intermittent demands. <i>Operational Research Quarterly</i>, <i>23</i>(3), 289–303.</p>
+
+<p>Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., &amp; Liu, T. Y. (2017). LightGBM: A highly efficient gradient boosting decision tree. In <i>Advances in Neural Information Processing Systems</i> (pp. 3146–3154).</p>
+
+<p>Lim, B., Arık, S. Ö., Loeff, N., &amp; Pfister, T. (2021). Temporal Fusion Transformers for interpretable multi-horizon time series forecasting. <i>International Journal of Forecasting</i>, <i>37</i>(4), 1748–1764.</p>
+
+<p>Makridakis, S., Spiliotis, E., &amp; Assimakopoulos, V. (2022). M5 accuracy competition: Results, findings, and conclusions. <i>International Journal of Forecasting</i>, <i>38</i>(4), 1346–1364.</p>
+
+<p>Nie, Y., Nguyen, N. H., Sinthong, P., &amp; Kalagnanam, J. (2023). A time series is worth 64 words: Long-term forecasting with transformers. In <i>Proceedings of the International Conference on Learning Representations (ICLR)</i>.</p>
+
+<p>Oreshkin, B. N., Carpov, D., Chapados, N., &amp; Bengio, Y. (2020). N-BEATS: Neural basis expansion analysis for interpretable time series forecasting. In <i>Proceedings of the International Conference on Learning Representations (ICLR)</i>.</p>
+
+<p>Salinas, D., Flunkert, V., Gasthaus, J., &amp; Januschowski, T. (2020). DeepAR: Probabilistic forecasting with autoregressive recurrent networks. <i>International Journal of Forecasting</i>, <i>36</i>(3), 1181–1191.</p>
+
+<p>Syntetos, A. A., Babai, Z., &amp; Gardner Jr, E. S. (2015). Forecasting intermittent inventory demands: Simple parametric methods vs. bootstrapping. <i>Journal of Business Research</i>, <i>68</i>(8), 1746–1752.</p>

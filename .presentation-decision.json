@@ -1,0 +1,1 @@
+{"audience":"学术界同行评审与零售预测研究者","reader_task":"评估论文贡献、方法有效性与实验严谨性，决定是否接受发表","genre_contract":"route-report","adapter":null,"presentation_mode":"formal","visual_plan":{"reason":"需要表格对比各模型/消融实验效果，以及方法架构图","blocks":[{"type":"whiteboard","min_count":1,"purpose":"展示稀疏标签增强的直接多步预测架构"}]}}

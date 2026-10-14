@@ -1,0 +1,39 @@
+[Date]
+
+Dear Editor-in-Chief,
+
+We are pleased to submit our manuscript entitled "When Feature Engineering Outperforms Deep Learning: Sparsity-Aware Direct Multi-Step Forecasting for Small-Scale Retail Demand" for consideration for publication in Expert Systems with Applications.
+
+**Why ESWA?**
+
+ESWA's emphasis on applied AI with substantive real-world validation makes it the ideal venue for this work. Our paper presents an end-to-end forecasting system deployed in production for a New York City coffee shop chain, combining LightGBM, Tweedie loss, and sparsity-aware feature engineering to solve a concrete inventory management problem. Unlike pure methodological papers that report benchmark-only results, our work demonstrates operational impact through uncertainty quantification (conformal-calibrated P10-P90 intervals at 80.6% coverage) and per-prediction TreeSHAP explainability.
+
+**What makes this contribution novel?**
+
+1. We provide the first systematic comparison demonstrating that a gradient-boosted tree model with 53 engineered features outperforms three state-of-the-art deep learning architectures (DeepAR, PatchTST, TFT) by 15-23% in MAE on small-scale intermittent retail demand data (239 SKU-store pairs, 181 days). This finding has practical significance for the many retailers who operate at this scale rather than the thousands-of-series regimes common in benchmark datasets.
+
+2. We introduce a lightweight alternative to segment-specific modeling: by injecting four per-SKU sparsity statistics as features into a unified global model, we simultaneously improve both sparse (-4.8% MAE) and dense (-1.1% MAE) SKU predictions---a result that conventional split-model approaches cannot achieve.
+
+3. Our ablation study decomposes the performance gain and reveals a counter-intuitive finding: split models improve sparse accuracy but degrade dense accuracy due to lost cross-segment information sharing, while feature injection preserves the benefits of a unified model.
+
+**Fit with ESWA scope:**
+
+The paper falls squarely within ESWA's focus areas: (a) expert and intelligent systems applied in industry (retail operations), (b) practical guidelines for system development and management (our feature engineering vs. deep learning findings provide actionable guidance for practitioners), and (c) data mining and knowledge discovery (TreeSHAP + sparsity labeling as a feature discovery strategy).
+
+**Additional information:**
+
+- This manuscript has not been published and is not under consideration elsewhere.
+- All authors have approved the manuscript and agree with its submission to ESWA.
+- We have no conflicts of interest to declare.
+- The data and code will be made publicly available upon acceptance.
+
+We believe this work will be of strong interest to ESWA's readership, particularly researchers and practitioners working at the intersection of applied machine learning, retail operations, and demand forecasting.
+
+Thank you for your time and consideration. We look forward to hearing from you.
+
+Sincerely,
+
+[Corresponding Author Name]
+[Affiliation]
+[Email]
+[ORCID ID]

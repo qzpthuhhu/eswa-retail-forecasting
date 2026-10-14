@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 """Croston, SBA, and TSB point forecasts for the manuscript's rolling-origin protocol.
 
-The coffee-shop series are not in this repository (commercial confidentiality).
-Without ``--series`` the script runs an internal self-check and exits 2.
-It does not impute MAE, WAPE, R^2, or direction hit.
+Pass ``--series data/daily_sku_sales.csv`` (columns ``sku``, ``date``, ``y``;
+181 daily rows per SKU). Without ``--series`` the script runs an internal
+self-check and exits 2. It does not impute MAE, WAPE, R^2, or direction hit.
 
-Protocol, matching Section 4 of the manuscript and ``classical_baselines.py``:
+Protocol, matching Section 4 of the manuscript:
 
-* Panel length 181 days. Five origins. The first evaluation index is 120
-  (0-based). Origins then step by 7 days: 120, 127, 134, 141, 148.
+* Panel length 181 days. Five origins. The first evaluation index is 146
+  (0-based), aligned to ``data/rolling_backtest_predictions.csv``
+  (calendar 2023-05-27, 2023-06-03, 2023-06-10, 2023-06-17, 2023-06-24).
+  Origins then step by 7 days: 146, 153, 160, 167, 174.
   Training rows are ``[origin - 120, origin)``. Evaluation rows are
   ``[origin, origin + 7)``.
+* The older script default 120, 127, 134, 141, 148 is not this file.
+  Those origins produce different errors and are not the manuscript table.
 * Each SKU is fit alone. The one-step rate is repeated for horizons 1..7.
 * Croston and SBA use alpha = 0.1. TSB uses alpha = 0.1 and beta = 0.1.
 * If a training window is all zeros, the rate is 0.
 * Metrics pool every SKU, origin, and horizon with equal weight per case.
   WAPE and R^2 are null when the denominator is zero. They are never filled
   with a placeholder number.
-
-CSV columns: ``sku``, ``date``, ``y``. Every SKU must have 181 rows.
 """
 
 from __future__ import annotations
@@ -36,6 +38,9 @@ TRAIN = 120
 HORIZON = 7
 N_WINDOWS = 5
 STEP = 7
+# 0-based index of 2023-05-27 when 2023-01-01 is index 0.
+# Matches forecast_origin in data/rolling_backtest_predictions.csv.
+FIRST_ORIGIN = 146
 ALPHA = 0.1
 BETA = 0.1
 
@@ -46,8 +51,13 @@ def rolling_origins(
     horizon: int = HORIZON,
     n_windows: int = N_WINDOWS,
     step: int = STEP,
+    first_origin: int = FIRST_ORIGIN,
 ) -> list[int]:
-    origins = [train + i * step for i in range(n_windows)]
+    origins = [first_origin + i * step for i in range(n_windows)]
+    if origins[0] < train:
+        raise ValueError(
+            f"first origin {origins[0]} is shorter than the {train}-day training window"
+        )
     last = origins[-1] + horizon
     if last > n_days:
         raise ValueError(f"origin window ends at {last}, past series length {n_days}")
@@ -214,7 +224,7 @@ def load_series(path: str) -> dict[str, list[float]]:
 
 def self_check() -> None:
     origins = rolling_origins()
-    if origins != [120, 127, 134, 141, 148]:
+    if origins != [146, 153, 160, 167, 174]:
         raise AssertionError(origins)
 
     constant = [4.0] * 30
@@ -296,8 +306,9 @@ def main(argv: list[str] | None = None) -> int:
             "beta": args.beta,
             "note": (
                 "Pooled over SKUs, origins, and horizons with equal weight per case. "
-                "Do not paste these numbers into the manuscript until the origin "
-                "alignment has been checked against the original LightGBM predictions."
+                "Origins 146, 153, 160, 167, 174 match forecast_origin in "
+                "data/rolling_backtest_predictions.csv. Origins 120, 127, 134, 141, 148 "
+                "are not this evaluation."
             ),
         },
         "results": [

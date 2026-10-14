@@ -13,7 +13,7 @@ This file is a guide for the person uploading. Do not upload the checklist itsel
 
 ## Limits already checked
 
-- Abstract: **225 words** (limit 250). Count is whitespace-delimited words after LaTeX commands are removed. Hyphenated compounds such as "multi-step" count as one word. Splitting those hyphens gives 242 words, still within the limit.
+- Abstract: whitespace-delimited words after LaTeX commands are removed (limit 250). `package_eswa_submission.py` prints the count and rejects an abstract over 250 words. Hyphenated compounds such as "multi-step" count as one word.
 - Highlights (`eswa_highlights.txt`), each line is one highlight and includes spaces:
 
   | Characters | Highlight |
@@ -21,6 +21,7 @@ This file is a guide for the person uploading. Do not upload the checklist itsel
   | 71 | Direct multi-step Tweedie LightGBM cuts MAE 8.5% vs. recursive baseline |
   | 66 | Sparsity features improve sparse (-4.8%) and dense (-1.1%) SKU MAE |
   | 64 | 23.0%, 15.2%, and 22.9% lower MAE than DeepAR, PatchTST, and TFT |
+  | 64 | Pooled WAPE 0.347 beats Croston, SBA, and TSB on aligned origins |
   | 74 | Conformal P10-P90 intervals cover 80.6% of actuals; TreeSHAP explains them |
 
 - Keywords (6): retail demand forecasting; direct multi-step prediction; Tweedie loss; sparsity-aware features; LightGBM; TreeSHAP explainability.
@@ -83,10 +84,10 @@ PNG figures are embedded in the compiled manuscript PDF. If EM refuses PNG uploa
 The scientific text is the same in `eswa_manuscript.tex` and `eswa_manuscript_anonymous.tex`. The review file still has no author name, affiliation, email, ORCID, funding sentence, or code URL. Shengchao Qin is a coauthor of Riachy et al. (2025), so the review bibliography contains that surname. `package_eswa_submission.py` checks Zhanpeng, ByteDance, the email, the ORCID, and the GitHub account. It does not treat the substring "qin" as an identity leak.
 
 - **Bibliography.** 41 entries. Journal DOIs added in this revision were read from Crossref on 14 October 2026. Three conference items already in the manuscript (LightGBM, PatchTST, N-BEATS) still have no DOI. Syntetos, Babai, and Gardner (2015) keeps the previous volume and pages; a guessed DOI was a different paper, so no DOI was added. Related Work and Table 1 (positioning) discuss Riachy et al. (2025), Vallés-Pérez et al. (2022), Long et al. (2025), Nathan et al. (2026), and Yılmaz Sucuoğlu et al. (2026), and separate this paper from Nathan and from Long: small daily coffee panel, direct horizons 1--7, sparsity covariates versus a split, and an explicit DeepAR/PatchTST/TFT comparison.
-- **Metrics.** The proposed model is best on MAE (2.411), R² (0.661), and direction hit (61.4%). Split models are best on WAPE (0.432 versus 0.452) and on sparse MAE (0.432 versus 0.452). MAE is the primary metric. The text states that WAPE is proportional to MAE on a shared sample, and that the four gradient-boosted WAPE entries match the sparse-MAE column. Those cells were not recomputed, and no error was replaced.
+- **Metrics.** The proposed model's pooled WAPE on all 8,400 archived predictions is 0.347 (previously 0.452, which was the sparse-segment MAE). Direction hit on that file is 61.6% (previously 61.4%). The model is best on MAE (2.411), R² (0.661), and direction hit among the reported numbers. It beats Croston, SBA, and TSB on MAE, WAPE, R², and direction hit. Overall WAPE for recursive L1, plain direct Tweedie, and the split is marked n.r.: those predictions are absent, and the old cells matched sparse MAE. Sparse MAE 0.452 and dense MAE 3.336 are unchanged. The split remains better on sparse MAE (0.432 versus 0.452). Deep-learning WAPE cells are carried forward and were not recomputed. The panel is 240 store-product series, including the all-zero series; 77 of 240 have zero-rate above 0.5 and 163 are dense.
 - **Deployment.** The conclusion, the discussion, and the cover letter describe the point forecast, the conformal P10--P90 interval (80.6% coverage), and TreeSHAP. They do not say the system is in production and they do not claim a what-if study.
-- **Croston, SBA, TSB.** The protocol, the smoothing constants (α = 0.1, and β = 0.1 for TSB), and the recursions are in the manuscript. Every cell in that table is TODO. `python3 classical_baselines.py --self-check` checks the algebra. `python3 classical_baselines.py` exits 2 and writes no metrics, because `data/daily_sku_sales.csv` is not in the repository. No MAE was invented. The comparison figures were not redrawn.
-- **Limits.** Abstract still **225 words**. The four highlights are unchanged and still within 85 characters. Re-run `python3 package_eswa_submission.py` after any further edit; it recompiled the review PDF and the title page for this revision.
+- **Croston, SBA, TSB.** Filled from `data/daily_sku_sales.csv` with origins 146, 153, 160, 167, 174 (the prediction-file alignment, not the old script default 120, 127, 134, 141, 148). α = 0.1 and TSB β = 0.1. Croston: MAE 2.808, WAPE 0.404, R² 0.571, direction 60.3%. SBA: 2.803, 0.404, 0.564, 60.0%. TSB: 2.813, 0.405, 0.570, 60.3%. `python3 classical_baselines.py --self-check` checks the algebra. `python3 classical_baselines.py --series data/daily_sku_sales.csv` reprints the unrounded JSON. Figure 6's proposed-model direction label is 61.6%. Other GBDT prediction files are still absent.
+- **Limits.** Five highlights, each within 85 characters. Re-run `python3 package_eswa_submission.py` after any further edit; it recompiles the review PDF and the title page and prints the abstract word count.
 
 ## Left out on purpose
 

@@ -1,6 +1,6 @@
 Data Availability Statement
 
-The data used in this study come from a New York City coffee shop chain. Raw transaction-level records cannot be shared because of commercial confidentiality. Aggregated daily-level statistics sufficient to reproduce the main experimental results are available from the corresponding author upon reasonable request.
+The data used in this study come from a New York City coffee shop chain. Raw transaction-level records cannot be shared because of commercial confidentiality. The aggregated daily store-product panel and the LightGBM rolling-origin predictions used for the recomputed metrics are included with the source code. Further aggregated statistics are available from the corresponding author upon reasonable request.
 
 Source code for model training, evaluation, and figure generation is publicly available at:
 

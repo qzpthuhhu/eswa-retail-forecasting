@@ -10,9 +10,9 @@ ESWA's emphasis on applied AI with substantive real-world validation makes it th
 
 What makes this contribution novel?
 
-1. On a small daily panel (239 store-product series, 181 days), a gradient-boosted tree model with 53 engineered features has lower MAE than DeepAR, PatchTST, and TFT, by 23.0%, 15.2%, and 22.9%. The comparison is for this short-history regime. The manuscript distinguishes it from large-scale retail gradient boosting (Long et al., 2025) and from aftermarket intermittent feature engineering (Nathan et al., 2026).
+1. On a small daily panel (240 store-product series, 181 days), a gradient-boosted tree model with 53 engineered features has lower MAE than DeepAR, PatchTST, and TFT, by 23.0%, 15.2%, and 22.9%. The comparison is for this short-history regime. The manuscript distinguishes it from large-scale retail gradient boosting (Long et al., 2025) and from aftermarket intermittent feature engineering (Nathan et al., 2026).
 
-2. I introduce a lightweight alternative to segment-specific modeling. Injecting four per-SKU sparsity statistics into one global model improves both sparse (-4.8% MAE) and dense (-1.1% MAE) predictions relative to one direct model. On overall MAE, R^2, and direction hit, that model beats a sparse/dense split. The split remains better on sparse MAE and on WAPE (0.432 versus 0.452). MAE is the primary metric.
+2. I introduce a lightweight alternative to segment-specific modeling. Injecting four per-SKU sparsity statistics into one global model improves both sparse (-4.8% MAE) and dense (-1.1% MAE) predictions relative to one direct model. On overall MAE, R^2, and direction hit, that model beats a sparse/dense split. The split remains better on sparse MAE (0.432 versus 0.452). Pooled WAPE for the proposed model is 0.347, which is lower than Croston, SBA, and TSB (0.404-0.405) on the same origins. Overall WAPE for the other gradient-boosted variants was not recomputed. MAE is the primary metric.
 
 3. The ablation study decomposes the performance gain and shows a counter-intuitive result: split models improve sparse accuracy but degrade dense accuracy because cross-segment information sharing is lost, whereas feature injection keeps the benefits of a unified model.
 
@@ -26,7 +26,7 @@ Additional information
 - I am the sole author. I approve the manuscript and agree to its submission to Expert Systems with Applications.
 - I have no competing interests to declare.
 - The submission is prepared for double-anonymized review. Author details, funding, and the code repository URL are on the title page and in the separate statements. The review manuscript does not contain them.
-- Raw transaction data cannot be made public because of commercial confidentiality. Aggregated daily-level statistics are available upon reasonable request. Code is publicly available at https://github.com/qzpthuhhu/eswa-retail-forecasting.
+- Raw transaction data cannot be made public because of commercial confidentiality. The aggregated daily store-product panel and the LightGBM rolling-origin predictions used for the recomputed metrics are in the code repository. Code is publicly available at https://github.com/qzpthuhhu/eswa-retail-forecasting.
 
 I believe this work will interest ESWA's readers, particularly researchers and practitioners working on applied machine learning, retail operations, and demand forecasting.
 

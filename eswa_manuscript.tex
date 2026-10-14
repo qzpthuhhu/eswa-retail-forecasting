@@ -42,7 +42,7 @@
 
 Accurate multi-step demand forecasting for small-scale retail is difficult: hundreds of stock-keeping units (SKUs) show intermittent demand, records are shorter than 200 days, and calendar effects are strong, so conventional deep learning models struggle to converge. This paper presents a sparsity-aware direct multi-step forecasting pipeline for coffee shop demand, evaluated on a real-world dataset of 3 stores, 80 products, and 181 days. The pipeline uses (1) \textbf{direct multi-step modeling} with independent LightGBM models for horizons T+1 through T+7, which removes recursive error propagation; (2) \textbf{Tweedie loss} (variance power = 1.3) for zero-inflated demand; and (3) \textbf{sparsity-aware feature engineering} that adds per-SKU zero-rate, average demand interval, and historical mean to one global model, improving sparse and dense products together without partitioning the training data.
 
-Against DeepAR, PatchTST, and the Temporal Fusion Transformer (TFT), the LightGBM model with 53 engineered features lowers mean absolute error (MAE) by 23.0\%, 15.2\%, and 22.9\%, respectively. Compared with a recursive L1 baseline, MAE falls by 8.5\% (2.633 to 2.411) and directional accuracy rises by 7.8 percentage points (53.6\% to 61.4\%). Ablation shows that direct multi-step transfer contributes the largest gain ($-7.3$\% MAE), while sparsity features add a further 1.3\% reduction, and both sparse ($-4.8$\%) and dense ($-1.1$\%) SKU segments improve at once. Conformal-calibrated P10--P90 intervals cover 80.6\% of actuals, and TreeSHAP explains each prediction, so the method can support inventory decisions.
+Against DeepAR, PatchTST, and the Temporal Fusion Transformer (TFT), the LightGBM model with 53 engineered features lowers mean absolute error (MAE) by 23.0\%, 15.2\%, and 22.9\%, respectively. Compared with a recursive L1 baseline, MAE falls by 8.5\% (2.633 to 2.411) and directional accuracy rises by 8.0 percentage points (53.6\% to 61.6\%). Pooled WAPE on this evaluation is 0.347, lower than Croston, SBA, and TSB. Ablation shows that direct multi-step transfer contributes the largest gain ($-7.3$\% MAE), while sparsity features add a further 1.3\% reduction, and both sparse ($-4.8$\%) and dense ($-1.1$\%) SKU segments improve at once. Conformal-calibrated P10--P90 intervals cover 80.6\% of actuals, and TreeSHAP explains each prediction, so the method can support inventory decisions.
 
 \end{abstract}
 
@@ -70,7 +70,7 @@ In this paper, we investigate a comprehensive forecasting pipeline for a real-wo
 
 \begin{enumerate}
     \item We demonstrate that a \textbf{direct multi-step forecasting} framework with \textbf{Tweedie loss} (variance power = 1.3) reduces mean absolute error (MAE) by 8.5\% compared to recursive forecasting, by eliminating error propagation across forecast horizons.
-    \item We show that \textbf{sparsity-aware feature engineering}---injecting per-SKU zero-rate, average demand interval (ADI), and historical mean as covariates into a unified global model---simultaneously improves sparse SKU MAE by 4.8\% and dense SKU MAE by 1.1\% relative to one direct model. On overall MAE, $R^{2}$, and direction hit, that unified model beats a sparse/dense split. The split remains better on sparse MAE and on WAPE.
+    \item We show that \textbf{sparsity-aware feature engineering}---injecting per-SKU zero-rate, average demand interval (ADI), and historical mean as covariates into a unified global model---simultaneously improves sparse SKU MAE by 4.8\% and dense SKU MAE by 1.1\% relative to one direct model. On overall MAE, $R^{2}$, and direction hit, that unified model beats a sparse/dense split. The split remains better on sparse MAE. Pooled WAPE for the proposed model is 0.347, and on MAE, WAPE, $R^{2}$, and direction hit it beats Croston, SBA, and TSB. Overall WAPE for the other gradient-boosted variants was not recomputed, because those predictions are absent.
     \item Through a controlled benchmark, we find that our gradient-boosted tree model (LightGBM with 53 engineered features) \textbf{outperforms three state-of-the-art deep learning models} (DeepAR, PatchTST, TFT) by 15--23\% in MAE on this small-scale intermittent demand dataset.
     \item We provide \textbf{TreeSHAP-based per-prediction explanations} and \textbf{quantile regression intervals} (P10/P50/P90). With the point forecast, these are the decision-support outputs the experiments produce.
 \end{enumerate}
@@ -96,11 +96,11 @@ A multi-step forecast is recursive, direct, or a hybrid such as the multi-input 
 
 Intermittent demand is a run of zeros broken by occasional positive sales. Croston forecast it as the ratio of two exponential smoothers, one for demand size and one for the inter-demand interval \citep{croston1972forecasting}. Willemain et al.\ compared that ratio with exponential smoothing on manufacturing series \citep{willemain1994croston}. Syntetos and Boylan showed that the ratio is biased on average, and the Syntetos--Boylan approximation (SBA) multiplies it by $(1 - \alpha/2)$ \citep{syntetos2001bias,syntetos2005sba}. Syntetos, Boylan, and Croston then classified series by the average demand interval and the squared coefficient of variation of size \citep{syntetos2005categorization}. Teunter, Syntetos, and Babai (TSB) update the occurrence probability on every period, including zeros, so that a lengthening run of zeros can represent obsolescence \citep{teunter2011tsb}. Later work forecasts an aggregate and then disaggregates \citep{nikolopoulos2011adida}, fits neural nets to intermittent series \citep{kourentzes2013nn}, selects or optimizes the smoothing constant \citep{kourentzes2014select}, combines intermittent forecasts \citep{petropoulos2015comb}, and replaces the exponential smoother with a hyperbolic-exponential form \citep{prestwich2014hyperbolic}. Syntetos, Babai, and Gardner compare parametric methods with bootstrapping \citep{syntetos2015forecasting}.
 
-Two choices in that literature are often run together, and this paper separates them. The first is the likelihood. Kolassa shows that retail counts should be scored as counts or as a compound Poisson, rather than as Gaussian errors \citep{kolassa2016count}. That is why the boosted trees below use a Tweedie loss. The second is the architecture: a model per segment, a two-stage hurdle, or covariates that describe sparsity. We take the third option and compare it with a split. Croston, SBA, and TSB are specified as experimental baselines in Section~\ref{sec:classical}. Their errors are not in the tables.
+Two choices in that literature are often run together, and this paper separates them. The first is the likelihood. Kolassa shows that retail counts should be scored as counts or as a compound Poisson, rather than as Gaussian errors \citep{kolassa2016count}. That is why the boosted trees below use a Tweedie loss. The second is the architecture: a model per segment, a two-stage hurdle, or covariates that describe sparsity. We take the third option and compare it with a split. Croston, SBA, and TSB are estimated on the same origins in Section~\ref{sec:classical}. The proposed model has lower MAE and WAPE, and higher $R^{2}$ and direction hit, than each of them.
 
 \subsection{Deep Learning for Time Series}
 
-DeepAR shares an autoregressive recurrent net across series and returns a full predictive distribution \citep{salinas2020deepar}. N-BEATS expands the series on learned bases and uses no hand-built calendar \citep{oreshkin2020nbeats}. The Temporal Fusion Transformer pairs variable selection with multi-horizon attention \citep{lim2021tft}. PatchTST cuts the series into patches before the transformer encoder \citep{nie2023patchtst}. Smyl's hybrid of exponential smoothing and a recurrent net won the M4 competition \citep{smyl2020hybrid}. Hewamalage, Bergmeir, and Bandara review when recurrent models repay their sample size \citep{hewarmalage2021rnn}. These architectures are built for many series and long histories. A panel of 239 series and 181 days is a different regime, so a loss against them on this panel is evidence about sample size, not a restatement of a large-scale leaderboard.
+DeepAR shares an autoregressive recurrent net across series and returns a full predictive distribution \citep{salinas2020deepar}. N-BEATS expands the series on learned bases and uses no hand-built calendar \citep{oreshkin2020nbeats}. The Temporal Fusion Transformer pairs variable selection with multi-horizon attention \citep{lim2021tft}. PatchTST cuts the series into patches before the transformer encoder \citep{nie2023patchtst}. Smyl's hybrid of exponential smoothing and a recurrent net won the M4 competition \citep{smyl2020hybrid}. Hewamalage, Bergmeir, and Bandara review when recurrent models repay their sample size \citep{hewarmalage2021rnn}. These architectures are built for many series and long histories. A panel of 240 series and 181 days is a different regime, so a loss against them on this panel is evidence about sample size, not a restatement of a large-scale leaderboard.
 
 \subsection{Nearest Peers}
 \label{sec:positioning}
@@ -113,7 +113,7 @@ Vall\'es-P\'erez et al.\ are the \emph{Expert Systems with Applications} paper c
 
 Long et al.\ are the closest method \citep{long2025ijpe}. They forecast retail demand with gradient-boosted trees under Tweedie and other count likelihoods, on a large e-commerce catalogue and on Favorita and M5, and they classify series by average demand interval and squared coefficient of variation. The paper is about scale: a probabilistic system that remains practical as the catalogue grows, with hierarchical forecasts. This paper is about the other end of the catalogue. There are three coffee stores and 181 days. Each horizon $h = 1,\ldots,7$ has its own model. Sparsity is four covariates inside one model, which we compare with a hard split, rather than a set of ADI/CV$^{2}$ classes with their own fits. We add TreeSHAP and a split-conformal interval. We do not reconcile hierarchies, and we do not enter an M5 uncertainty ranking.
 
-Nathan et al.\ give the sentence in our title its sharpest published form: for intermittent demand, feature engineering can matter more than a more elaborate architecture \citep{nathan2026scirep}. The panel is a large monthly automotive aftermarket. The features are smoothed occurrence and size statistics (SHOS). The architecture comparison is a single-stage tree or linear model against a two-stage hurdle, with Wilcoxon tests across series. Daily direct multi-step forecasts, and DeepAR, PatchTST, and TFT, are outside that design. Y{\i}lmaz Sucuo{\u{g}}lu et al.\ are the fashion-retail counterpart: 64 weekly attribute-level series, a one-stage model against a two-stage occurrence classifier plus a gradient-boosted size model, and a baseline set that already contains Croston, SBA, LSTM, and TFT \citep{yilmaz2026fashion}. Their two-stage model wins on that panel. The result is a reason to keep a hurdle on the future-work list, and it is why our split ablation is the right objection to answer. On the coffee panel the split lowers sparse MAE and raises dense MAE. We claim only that, here, sparsity covariates in one direct Tweedie model are better on MAE, $R^{2}$, and direction hit. We do not claim that a two-stage model loses in general, and Section~\ref{sec:results} records that the split has the better WAPE.
+Nathan et al.\ give the sentence in our title its sharpest published form: for intermittent demand, feature engineering can matter more than a more elaborate architecture \citep{nathan2026scirep}. The panel is a large monthly automotive aftermarket. The features are smoothed occurrence and size statistics (SHOS). The architecture comparison is a single-stage tree or linear model against a two-stage hurdle, with Wilcoxon tests across series. Daily direct multi-step forecasts, and DeepAR, PatchTST, and TFT, are outside that design. Y{\i}lmaz Sucuo{\u{g}}lu et al.\ are the fashion-retail counterpart: 64 weekly attribute-level series, a one-stage model against a two-stage occurrence classifier plus a gradient-boosted size model, and a baseline set that already contains Croston, SBA, LSTM, and TFT \citep{yilmaz2026fashion}. Their two-stage model wins on that panel. The result is a reason to keep a hurdle on the future-work list, and it is why our split ablation is the right objection to answer. On the coffee panel the split lowers sparse MAE and raises dense MAE. We claim only that, here, sparsity covariates in one direct Tweedie model are better on MAE, $R^{2}$, and direction hit than the split, and better on MAE, WAPE, $R^{2}$, and direction hit than Croston, SBA, and TSB. We do not claim that a two-stage model loses in general. The split still has the lower sparse MAE. Overall WAPE for the split was not recomputed.
 
 \begin{table}[H]
     \centering
@@ -126,10 +126,10 @@ Nathan et al.\ give the sentence in our title its sharpest published form: for i
         Study & Panel & Horizon & How sparsity is handled & What is compared \\
         \midrule
         This paper &
-        3 coffee stores; 239 daily store--SKU series; 181 days &
+        3 coffee stores; 240 daily store--SKU series; 181 days &
         A separate model for each $h=1,\ldots,7$ &
         Zero-rate, ADI, non-zero mean, and a sparse flag in one model, set against a sparse/dense split &
-        Recursive L1, direct Tweedie, the split, DeepAR, PatchTST, and TFT \\
+        Recursive L1, direct Tweedie, the split, Croston, SBA, TSB, DeepAR, PatchTST, and TFT \\
         \addlinespace
         Riachy et al.\ (2025) &
         UK footwear retail and a public retail index, with large historical gaps &
@@ -174,16 +174,16 @@ We consider a retail setting with $S$ stores, each offering $P$ products. For ea
 
 \subsection{Dataset}
 
-The dataset originates from a New York City coffee shop chain and consists of transaction-level sales records from January 1 to June 30, 2023 (181 days). We aggregate transactions to daily sales at the store--product granularity, yielding 239 store--product combinations (henceforth referred to as ``SKUs''). External weather data (temperature, precipitation) for NYC during the same period is incorporated as exogenous features.
+The dataset originates from a New York City coffee shop chain and consists of transaction-level sales records from January 1 to June 30, 2023 (181 days). We aggregate transactions to daily sales at the store--product granularity, yielding 240 store--product combinations (henceforth referred to as ``SKUs''), including one all-zero series. External weather data (temperature, precipitation) for NYC during the same period is incorporated as exogenous features.
 
 \subsection{Exploratory Analysis}
 
-Figure~\ref{fig:context} provides an overview of the demand characteristics. The dataset exhibits pronounced heterogeneity: the mean zero-sales proportion across SKUs is 26.6\%, but the distribution is heavily right-skewed, with a median of only 3.3\%. Approximately 32\% of SKUs (76 out of 239) have more than 50\% zero-sales days, and 20 SKUs exceed 80\% zeros. The average demand interval (ADI) has a mean of 2.1 days (median = 1.0), confirming that demand is intermittent but not extremely sparse for the majority of SKUs. Daily sales volume varies by an order of magnitude across stores, with zero-day rates inversely correlated with average sales volume.
+Figure~\ref{fig:context} provides an overview of the demand characteristics. The dataset exhibits pronounced heterogeneity: the mean zero-sales proportion across SKUs is 26.9\%, but the distribution is heavily right-skewed, with a median of only 3.3\%. Approximately 32\% of SKUs (77 out of 240) have more than 50\% zero-sales days, and 21 SKUs exceed 80\% zeros. The average demand interval (ADI) has a mean of 2.1 days (median = 1.0), confirming that demand is intermittent but not extremely sparse for the majority of SKUs. Daily sales volume varies by an order of magnitude across stores, with zero-day rates inversely correlated with average sales volume.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{fig1_application_context.png}
-    \caption{Coffee shop demand characteristics. (a) Representative SKU time series showing high, medium, and low-demand patterns with 7-day rolling means. (b) Distribution of zero-sales proportion across 239 SKU-store pairs. (c) Average demand interval (ADI) distribution. (d) Store-level comparison of average daily sales and zero-day rates.}
+    \caption{Coffee shop demand characteristics. (a) Representative SKU time series showing high, medium, and low-demand patterns with 7-day rolling means. (b) Distribution of zero-sales proportion across 240 SKU-store pairs. (c) Average demand interval (ADI) distribution. (d) Store-level comparison of average daily sales and zero-day rates.}
     \label{fig:context}
 \end{figure}
 
@@ -245,7 +245,7 @@ where $\rho = 1.3$ balances robustness to zeros (higher $\rho$ penalizes zero pr
 \subsection{Experimental Protocol}
 \label{sec:protocol}
 
-We adopt a rolling-origin backtesting protocol with 5 windows. Each window uses 120 days for training and evaluates on the subsequent 7 days. Windows are separated by 7-day intervals, yielding 5 independent evaluation sets with no temporal overlap. All feature engineering and hyperparameter selection use only training-window data, strictly preventing future information leakage.
+We adopt a rolling-origin backtesting protocol with 5 windows. Each window uses 120 days for training and evaluates on the subsequent 7 days. Windows are separated by 7-day intervals, yielding 5 independent evaluation sets with no temporal overlap. The origins are 0-based day indices 146, 153, 160, 167, and 174 (27 May, 3 June, 10 June, 17 June, and 24 June 2023). All feature engineering and hyperparameter selection use only training-window data, strictly preventing future information leakage.
 
 \subsection{Evaluation Metrics}
 \label{sec:metrics}
@@ -254,14 +254,14 @@ We report four metrics. MAE is the primary one: the model comparison, the ablati
 
 \begin{itemize}
     \item \textbf{MAE} (mean absolute error): $\frac{1}{N}\sum |y_i - \hat{y}_i|$. Primary metric.
-    \item \textbf{WAPE} (weighted absolute percentage error): $\sum|y_i - \hat{y}_i| / \sum|y_i|$. On one shared set of cases, WAPE is proportional to MAE, because the denominator does not depend on the method. Table~\ref{tab:overall} does not preserve that ranking, and Section~\ref{sec:results} says so rather than forcing the two columns into one story.
+    \item \textbf{WAPE} (weighted absolute percentage error): $\sum|y_i - \hat{y}_i| / \sum|y_i|$. On one shared set of cases, WAPE is proportional to MAE, because the denominator does not depend on the method. For the proposed model the pooled value on all 8{,}400 cases is 0.347. The value 0.452 previously printed in that cell was the sparse-segment MAE, not WAPE. Overall WAPE for the other gradient-boosted variants is marked n.r.\ in Table~\ref{tab:overall}: those predictions are not in the archive, and the previous cells matched sparse MAE.
     \item \textbf{R\textsuperscript{2}}: coefficient of determination.
     \item \textbf{Direction hit rate}: proportion of predictions where $\text{sign}(\hat{y}_{t+h} - y_t) = \text{sign}(y_{t+h} - y_t)$.
 \end{itemize}
 
 \subsection{Baselines}
 
-Six fitted baselines are organized in three groups below. Croston, SBA, and TSB are specified in Section~\ref{sec:classical}. They are omitted from Table~\ref{tab:overall} so that an unestimated cell cannot be read as a measured error.
+Six fitted baselines are organized in three groups below. Croston, SBA, and TSB are estimated in Section~\ref{sec:classical} and reported in Table~\ref{tab:classical}, not in Table~\ref{tab:overall}.
 
 \textbf{GBDT-based methods:}
 \begin{itemize}
@@ -281,16 +281,16 @@ All deep learning models were trained for 40 epochs with early stopping (patienc
 
 \begin{table}[H]
     \centering
-    \caption{Overall performance comparison across all methods. Best results in \textbf{bold}, second-best \underline{underlined}.}
+    \caption{Overall performance comparison across all methods. Best results in \textbf{bold}, second-best \underline{underlined}. WAPE cells marked n.r.\ were not recomputed. The value 0.347 is the recomputed pooled WAPE for the proposed model; it is not a rank against the n.r.\ cells. Deep-learning WAPE values are carried forward and were not recomputed.}
     \label{tab:overall}
     \begin{tabular}{lcccc}
         \toprule
         \textbf{Method} & \textbf{MAE $\downarrow$} & \textbf{WAPE $\downarrow$} & \textbf{R\textsuperscript{2} $\uparrow$} & \textbf{Dir. Hit $\uparrow$} \\
         \midrule
-        Recursive L1       & 2.633 & 0.533 & 0.607 & 53.6\% \\
-        Direct Tweedie     & \underline{2.442} & 0.475 & \underline{0.657} & \underline{58.9\%} \\
-        + Split Models     & 2.468 & \textbf{0.432} & 0.648 & 55.2\% \\
-        + Sparsity Labels (Ours) & \textbf{2.411} & \underline{0.452} & \textbf{0.661} & \textbf{61.4\%} \\
+        Recursive L1       & 2.633 & n.r. & 0.607 & 53.6\% \\
+        Direct Tweedie     & \underline{2.442} & n.r. & \underline{0.657} & \underline{58.9\%} \\
+        + Split Models     & 2.468 & n.r. & 0.648 & 55.2\% \\
+        + Sparsity Labels (Ours) & \textbf{2.411} & 0.347 & \textbf{0.661} & \textbf{61.6\%} \\
         \midrule
         DeepAR             & 2.966 & 0.582 & 0.497 & 40.1\% \\
         PatchTST           & 2.778 & 0.544 & 0.555 & 37.1\% \\
@@ -302,18 +302,18 @@ All deep learning models were trained for 40 epochs with early stopping (patienc
 \subsection{Overall Performance}
 
 \label{sec:results}
-Table~\ref{tab:overall} is the rolling-origin comparison. On the primary metric, MAE, sparsity-aware direct Tweedie is best (2.411), ahead of direct Tweedie without the sparsity covariates (2.442) and of the split (2.468). It is also best on $R^{2}$ (0.661) and on direction hit rate (61.4\%). It is second on WAPE. The split reaches 0.432, against 0.452 for the proposed model, so the proposed model is not best on every reported metric.
+Table~\ref{tab:overall} is the rolling-origin comparison. On the primary metric, MAE, sparsity-aware direct Tweedie is best (2.411), ahead of direct Tweedie without the sparsity covariates (2.442) and of the split (2.468). It is also best on $R^{2}$ (0.661) and on direction hit rate (61.6\%). Pooled WAPE for this model, recomputed from the archived predictions on all 8{,}400 cases, is 0.347. That value is lower than Croston, SBA, and TSB (Table~\ref{tab:classical}). It is not a claim that the model has the best WAPE among the other gradient-boosted variants: those predictions are absent, so their overall WAPE cells are marked n.r. The numbers previously in those cells, including 0.452 for the proposed model, were the sparse-segment MAEs in Table~\ref{tab:ablation}.
 
-The WAPE gap is reported as it stands in the table. It is not given a volume-weighting interpretation. Under the definitions above, WAPE and MAE use the same sum of absolute errors on a common sample, and they must rank methods in the same order. The four gradient-boosted WAPE entries are also numerically identical to the sparse-segment MAE entries in Table~\ref{tab:ablation}. Recomputing WAPE needs the prediction file, which is not in the package, so the published figures are left unchanged. MAE remains the metric on which the 8.5\% claim and the ablation are based, because it is the unweighted error in sales units.
+Under the definition above, WAPE and MAE use the same sum of absolute errors on a common sample, so they rank methods in the same order. The earlier table did not, because the gradient-boosted WAPE column had been filled with sparse MAE. That discrepancy is resolved for the proposed model. MAE remains the metric on which the 8.5\% claim and the ablation are based.
 
 Against the recursive baseline, MAE falls by 8.5\% (2.633 $\rightarrow$ 2.411). The gain is present on all five windows and increases with the horizon. T+7, the horizon most exposed to recursive error accumulation, shows the largest gain.
 
 Figure~\ref{fig:overall} shows the overall MAE comparison, and Figure~\ref{fig:horizon} illustrates how the improvement monotonically increases with forecast horizon, consistent with the elimination of recursive error accumulation.
 
-All three deep learning models have higher MAE than the gradient-boosted tree model: PatchTST by 15.2\%, TFT by 22.9\%, and DeepAR by 23.0\%. The gap is wider in directional accuracy. Our model reaches a 61.4\% direction hit rate, and the best deep learning model on that metric (DeepAR) reaches 40.1\% (Figure~\ref{fig:direction}). We attribute the gap to two factors:
+All three deep learning models have higher MAE than the gradient-boosted tree model: PatchTST by 15.2\%, TFT by 22.9\%, and DeepAR by 23.0\%. The gap is wider in directional accuracy. Our model reaches a 61.6\% direction hit rate, and the best deep learning model on that metric (DeepAR) reaches 40.1\% (Figure~\ref{fig:direction}). We attribute the gap to two factors:
 
 \begin{enumerate}
-    \item \textbf{Data scarcity:} With only 239 time series and 120 training days, deep learning models lack sufficient data to learn effective representations. PatchTST is designed for long sequences (512+ time steps). On this short context its MAE is the best of the three deep models, and its direction hit rate is the lowest (37.1\%).
+    \item \textbf{Data scarcity:} With only 240 time series and 120 training days, deep learning models lack sufficient data to learn effective representations. PatchTST is designed for long sequences (512+ time steps). On this short context its MAE is the best of the three deep models, and its direction hit rate is the lowest (37.1\%).
     \item \textbf{Feature engineering advantage:} Our 53 curated features (lags, rolling statistics, calendar encodings) encode domain knowledge that deep learning models must discover from data---a challenging task with limited observations.
 \end{enumerate}
 
@@ -334,9 +334,11 @@ All three deep learning models have higher MAE than the gradient-boosted tree mo
 \subsection{Classical Intermittent Baselines}
 \label{sec:classical}
 
-Croston's method, SBA, and TSB are the standard statistical baselines for intermittent demand \citep{croston1972forecasting,syntetos2005sba,teunter2011tsb}. They are not in Table~\ref{tab:overall}. The daily store--SKU series are not in the replication package: the data statement withholds them for commercial confidentiality, and the original prediction file was not archived with the manuscript. This revision therefore does not report MAE, WAPE, $R^{2}$, or direction hit for these three methods. Table~\ref{tab:classical} marks every cell as TODO. Those cells are not results, and no value has been imputed.
+Croston's method, SBA, and TSB are the standard statistical baselines for intermittent demand \citep{croston1972forecasting,syntetos2005sba,teunter2011tsb}. They are reported in Table~\ref{tab:classical}, not in Table~\ref{tab:overall}, because each forecast is a one-step rate repeated across the seven horizons.
 
-The protocol below is the one a rerun should follow. It uses the same window lengths as Section~\ref{sec:protocol}. The manuscript does not record the calendar date of the first origin, so the script fixes a reproducible alignment rather than guessing which alignment matched the LightGBM fits. On a series of 181 days the evaluation indices (0-based) are 120, 127, 134, 141, and 148. Training rows are the 120 days before each index. Evaluation rows are the next 7 days. Each SKU is fit on its own. The resulting one-step rate is copied to all seven horizons, because these methods have no horizon index and no calendar. Smoothing uses a fixed $\alpha = 0.1$, the usual default, and for TSB a fixed $\beta = 0.1$. The constants are not optimized per series \citep{kourentzes2014select}. Metrics use the definitions in Section~\ref{sec:metrics}, pooled over SKUs, origins, and horizons with equal weight per case. If the archived LightGBM predictions used another origin alignment or another pooling, the classical numbers have to be recomputed on that same alignment before they are compared with Table~\ref{tab:overall}.
+The daily panel is the 240 store--SKU series released with the code (181 days each, including the all-zero series). The LightGBM prediction file contains 8{,}400 rows: 240 SKUs, five origins, and seven horizons, for the sparsity-aware direct Tweedie model only (\texttt{direct\_tweedie\_1\_3\_sparse}). The origins in that file are 0-based indices 146, 153, 160, 167, and 174, the same dates as Section~\ref{sec:protocol}. Training rows are the 120 days before each index. Evaluation rows are the next 7 days. Each SKU is fit on its own. The one-step rate is copied to all seven horizons, because these methods have no horizon index and no calendar. Smoothing uses a fixed $\alpha = 0.1$, and for TSB a fixed $\beta = 0.1$. The constants are not optimized per series \citep{kourentzes2014select}. Metrics use the definitions in Section~\ref{sec:metrics}, pooled over SKUs, origins, and horizons with equal weight per case. An earlier script default used indices 120, 127, 134, 141, and 148. Those origins are not the prediction file and are not the numbers in Table~\ref{tab:classical}.
+
+On these 8{,}400 cases the proposed model (MAE 2.411, WAPE 0.347, $R^{2}$ 0.661, direction hit 61.6\%) is better than Croston, SBA, and TSB on MAE, WAPE, $R^{2}$, and direction hit. Recursive L1, plain direct Tweedie, and the split are not in this comparison: their predictions are not archived, so their overall WAPE is not reported.
 
 Let $t_0$ be the 0-based index of the first positive demand in a training window. Croston sets $z = y_{t_0}$ and $p = t_0 + 1$. At each later positive demand, with index $t$ and gap $q = t - t_{\mathrm{prev}}$,
 \begin{equation}
@@ -349,19 +351,19 @@ and the rate is $z/p$. SBA multiplies that rate by $(1 - \alpha/2)$. If the wind
     z \leftarrow z + \alpha (y_t - z) \ \text{if}\ y_t > 0,
     \label{eq:tsb}
 \end{equation}
-and the rate is $\pi z$. The recursion is implemented in \texttt{classical\_baselines.py}. Run without the series file, the script checks the algebra and writes no metrics.
+and the rate is $\pi z$. The recursion is implemented in \texttt{classical\_baselines.py}. With the daily panel it writes the metrics in Table~\ref{tab:classical}. Without the series file it checks the algebra and writes no metrics.
 
 \begin{table}[H]
     \centering
-    \caption{Classical intermittent baselines. \textbf{TODO: not estimated.} The series are not in the package. Do not read these cells as measured errors.}
+    \caption{Classical intermittent baselines on the same 8{,}400 cases as the LightGBM predictions (origins 146, 153, 160, 167, 174; $\alpha = 0.1$; TSB $\beta = 0.1$). Values are rounded to the precision of Table~\ref{tab:overall}.}
     \label{tab:classical}
     \begin{tabular}{lcccc}
         \toprule
         \textbf{Method} & \textbf{MAE $\downarrow$} & \textbf{WAPE $\downarrow$} & \textbf{R\textsuperscript{2} $\uparrow$} & \textbf{Dir.\ Hit $\uparrow$} \\
         \midrule
-        Croston ($\alpha = 0.1$) & TODO & TODO & TODO & TODO \\
-        SBA ($\alpha = 0.1$) & TODO & TODO & TODO & TODO \\
-        TSB ($\alpha = \beta = 0.1$) & TODO & TODO & TODO & TODO \\
+        Croston ($\alpha = 0.1$) & 2.808 & 0.404 & 0.571 & 60.3\% \\
+        SBA ($\alpha = 0.1$) & 2.803 & 0.404 & 0.564 & 60.0\% \\
+        TSB ($\alpha = \beta = 0.1$) & 2.813 & 0.405 & 0.570 & 60.3\% \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -391,7 +393,7 @@ Three findings emerge from the ablation study:
 \begin{enumerate}
     \item \textbf{Direct multi-step is the main driver:} Switching from recursive to direct forecasting reduces overall MAE by 7.3\% (2.633 $\rightarrow$ 2.442). The gain is particularly pronounced at longer horizons (T+7: $-11.8$\%).
     \item \textbf{Sparsity features provide complementary gain:} Adding sparsity labels further reduces MAE by 1.3\% to 2.411. Critically, \emph{both} sparse ($-4.8$\%) and dense ($-1.1$\%) segments improve---the global model learns to use sparsity features to adjust its prediction strategy per SKU.
-    \item \textbf{Feature injection beats the split on overall MAE, and the split wins on sparse MAE:} Relative to direct multi-step, the split improves sparse MAE by 9.0\% (0.475 $\rightarrow$ 0.432) and degrades dense MAE by 1.7\% (3.371 $\rightarrow$ 3.430), because the dense model no longer trains on the sparse series. The unified model keeps most of the sparse-segment gain (sparse MAE 0.452) without that dense-segment penalty, and its overall MAE is lower (2.411 versus 2.468). The split's better sparse MAE is the same ordering as its better WAPE in Table~\ref{tab:overall}.
+    \item \textbf{Feature injection beats the split on overall MAE, and the split wins on sparse MAE:} Relative to direct multi-step, the split improves sparse MAE by 9.0\% (0.475 $\rightarrow$ 0.432) and degrades dense MAE by 1.7\% (3.371 $\rightarrow$ 3.430), because the dense model no longer trains on the sparse series. The unified model keeps most of the sparse-segment gain (sparse MAE 0.452) without that dense-segment penalty, and its overall MAE is lower (2.411 versus 2.468). That sparse-MAE ordering is not an overall-WAPE result. Overall WAPE for the split was not recomputed.
 \end{enumerate}
 
 \begin{figure}[H]
@@ -437,7 +439,7 @@ Our results align with recent findings from the M5 Competition and independent b
 
 \subsection{Sparsity Features vs.\ Segment-Specific Modeling}
 
-The finding that needs explaining is that sparsity covariates in one model have lower overall MAE than separate sparse and dense models, while the split still has lower sparse MAE and lower WAPE. The explanation lies in the \emph{information-sharing} vs.\ \emph{specialization} trade-off. Sparse SKUs (77 out of 239) have insufficient data to train good models independently; they benefit from the information shared by dense SKUs through the global model's tree structure. The sparsity features then allow the model to condition its predictions on each SKU's sparsity profile---effectively learning a smooth interpolation between sparse-specific and dense-specific prediction strategies without hard partitioning.
+The finding that needs explaining is that sparsity covariates in one model have lower overall MAE than separate sparse and dense models, while the split still has lower sparse MAE. The explanation lies in the \emph{information-sharing} vs.\ \emph{specialization} trade-off. Sparse SKUs (77 out of 240, defined by zero-rate above 0.5; 163 are dense) have insufficient data to train good models independently; they benefit from the information shared by dense SKUs through the global model's tree structure. The sparsity features then allow the model to condition its predictions on each SKU's sparsity profile---effectively learning a smooth interpolation between sparse-specific and dense-specific prediction strategies without hard partitioning.
 
 This finding has practical implications for retail forecasting systems: instead of maintaining separate models for different product segments (with the associated operational overhead), a single model with appropriate conditioning features can serve all products.
 
@@ -447,7 +449,7 @@ The fitted pipeline returns three objects for each horizon: a Tweedie point fore
 
 \subsection{Limitations and Future Work}
 
-The series cover 181 days in one city, so a longer history would test whether the same ranking holds over a full seasonal cycle. The study does not ensemble LightGBM with a deep model. The Tweedie variance power is fixed at 1.3. The conformal intervals match the nominal 80\% coverage in aggregate and do not adjust for dependence across horizons. Wilcoxon or Diebold--Mariano tests on the five windows, a reported search over LightGBM hyperparameters and over $\rho$, an N-BEATS baseline \citep{oreshkin2020nbeats}, a short-history slice of a public panel such as Favorita or M5, and an inventory simulation are the natural next measurements. Croston, SBA, and TSB are already specified in Section~\ref{sec:classical}; their errors are blocked by the absence of the daily series from this package, not by a decision to leave them out of the design.
+The series cover 181 days in one city, so a longer history would test whether the same ranking holds over a full seasonal cycle. The study does not ensemble LightGBM with a deep model. The Tweedie variance power is fixed at 1.3. The conformal intervals match the nominal 80\% coverage in aggregate and do not adjust for dependence across horizons. Wilcoxon or Diebold--Mariano tests on the five windows, a reported search over LightGBM hyperparameters and over $\rho$, an N-BEATS baseline \citep{oreshkin2020nbeats}, a short-history slice of a public panel such as Favorita or M5, and an inventory simulation are the natural next measurements. Croston, SBA, and TSB are reported in Section~\ref{sec:classical} on the origins used by the LightGBM predictions. Overall WAPE for the recursive, plain direct, and split gradient-boosted models remains unreported, because those predictions are not in the archive.
 
 %====================================================================
 \section{Conclusion}
@@ -478,7 +480,7 @@ The author declares that they have no known competing financial interests or per
 
 \section*{Data availability}
 
-Raw transaction-level data cannot be shared because of commercial confidentiality. Aggregated daily-level statistics sufficient to reproduce the main experimental results are available from the corresponding author upon reasonable request. Source code is publicly available at \url{https://github.com/qzpthuhhu/eswa-retail-forecasting}.
+Raw transaction-level data cannot be shared because of commercial confidentiality. The aggregated daily store--SKU panel and the LightGBM rolling-origin predictions used for the recomputed metrics are included with the source code at \url{https://github.com/qzpthuhhu/eswa-retail-forecasting}. Further aggregated statistics are available from the corresponding author upon reasonable request.
 
 %====================================================================
 % BIBLIOGRAPHY

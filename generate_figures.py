@@ -296,7 +296,7 @@ fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5))
 
 # Direction Accuracy
 methods_da = ["Recursive\nL1", "Direct\nTweedie", "Ours", "DeepAR", "PatchTST", "TFT"]
-da_vals = [0.536, 0.589, 0.614, 0.401, 0.371, 0.388]
+da_vals = [0.536, 0.589, 0.616, 0.401, 0.371, 0.388]
 colors_da = [COLORS["recursive"], COLORS["baseline"], COLORS["ours"],
              COLORS["deepar"], COLORS["patchtst"], COLORS["tft"]]
 

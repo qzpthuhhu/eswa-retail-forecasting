@@ -1,0 +1,33 @@
+Expert Systems with Applications
+Title page (double-anonymized review; do not send this page to reviewers)
+
+Title
+When Feature Engineering Outperforms Deep Learning: Sparsity-Aware Direct Multi-Step Forecasting for Small-Scale Retail Demand
+
+Sole and corresponding author
+Zhanpeng Qin
+
+Affiliation
+ByteDance
+Beijing, China
+
+Email
+richardandelu50@gmail.com
+
+ORCID
+0009-0008-9819-8831
+
+Date
+14 October 2026
+
+Acknowledgments
+This research did not receive any specific grant from funding agencies in the public, commercial, or not-for-profit sectors.
+
+Declaration of competing interests
+The author declares that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
+CRediT authorship contribution statement
+Zhanpeng Qin: Conceptualization, Methodology, Software, Formal Analysis, Investigation, Writing - Original Draft, Writing - Review & Editing, Visualization, Project Administration.
+
+Data availability
+Raw transaction-level data cannot be shared because of commercial confidentiality. Aggregated daily-level statistics sufficient to reproduce the main experimental results are available from the corresponding author upon reasonable request. Source code is publicly available at https://github.com/qzpthuhhu/eswa-retail-forecasting.

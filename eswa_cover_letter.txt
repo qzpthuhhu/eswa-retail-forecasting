@@ -1,4 +1,4 @@
-[Date]
+14 October 2026
 
 Dear Editor-in-Chief,
 
@@ -33,7 +33,7 @@ Thank you for your time and consideration. We look forward to hearing from you.
 
 Sincerely,
 
-[Corresponding Author Name]
-[Affiliation]
-[Email]
-[ORCID ID]
+Zhanpeng Qin
+ByteDance, Beijing, China
+richardandelu50@gmail.com
+ORCID: 0009-0008-9819-8831

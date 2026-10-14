@@ -7,3 +7,13 @@ __pycache__/
 
 # OS files
 .DS_Store
+
+# LaTeX intermediates
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.synctex.gz
+*.spl
+.latex-build/

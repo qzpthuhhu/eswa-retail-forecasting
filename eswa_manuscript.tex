@@ -1,12 +1,18 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Expert Systems with Applications (ESWA) — LaTeX Manuscript
-% ESWA uses Elsevier's elsarticle class with Harvard referencing
+% Expert Systems with Applications (ESWA) — identified manuscript.
+% Author record only. Do not upload this file for peer review.
+% Review file: eswa_manuscript_anonymous.tex
+% Title page:  eswa_title_page.tex
+% Elsevier elsarticle, Harvard (author-year) references.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[review]{elsarticle}
+\documentclass[review,authoryear]{elsarticle}
 
 \usepackage{lineno,hyperref}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
+% Flat figure filenames for Editorial Manager. figures/ is a local fallback
+% used only when this file is compiled from the repository root.
+\graphicspath{{}{figures/}}
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{xcolor}
@@ -34,9 +40,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-Accurate multi-step demand forecasting for small-scale retail environments poses unique challenges: hundreds of stock-keeping units (SKUs) with highly intermittent demand, short historical records (fewer than 200 days), and strong calendar effects create a regime where conventional deep learning models struggle to converge. We present a sparsity-aware direct multi-step forecasting pipeline for coffee shop demand prediction, evaluated on a real-world dataset of 3 stores, 80 products, and 181 days. Our approach combines three key technical choices: (1) \textbf{direct multi-step modeling} with independent LightGBM models for each forecast horizon (T+1 through T+7), which eliminates recursive error propagation; (2) \textbf{Tweedie loss} (variance power = 1.3) for robust learning under zero-inflated demand distributions; and (3) \textbf{sparsity-aware feature engineering} that injects per-SKU characteristics (zero-rate, average demand interval, historical mean) into a unified global model, enabling simultaneous improvement across both sparse and dense products without partitioning training data.
+Accurate multi-step demand forecasting for small-scale retail is difficult: hundreds of stock-keeping units (SKUs) show intermittent demand, records are shorter than 200 days, and calendar effects are strong, so conventional deep learning models struggle to converge. This paper presents a sparsity-aware direct multi-step forecasting pipeline for coffee shop demand, evaluated on a real-world dataset of 3 stores, 80 products, and 181 days. The pipeline uses (1) \textbf{direct multi-step modeling} with independent LightGBM models for horizons T+1 through T+7, which removes recursive error propagation; (2) \textbf{Tweedie loss} (variance power = 1.3) for zero-inflated demand; and (3) \textbf{sparsity-aware feature engineering} that adds per-SKU zero-rate, average demand interval, and historical mean to one global model, improving sparse and dense products together without partitioning the training data.
 
-In a controlled benchmark against three state-of-the-art deep learning models---DeepAR, PatchTST, and Temporal Fusion Transformer (TFT)---our LightGBM-based approach with 53 engineered features achieves superior performance by substantial margins: 23.0\% lower MAE than DeepAR, 15.2\% lower than PatchTST, and 22.9\% lower than TFT. Compared to a recursive L1 baseline, our method reduces MAE by 8.5\% (2.633 to 2.411) and improves directional accuracy by 7.8 percentage points (53.6\% to 61.4\%). Ablation analysis reveals that direct multi-step transfer contributes the largest gain ($-7.3$\% MAE), while sparsity features provide an additional 1.3\% reduction with the notable property that both sparse ($-4.8$\%) and dense ($-1.1$\%) SKU segments benefit simultaneously---a result unattainable by conventional segment-specific modeling. We further provide conformal-calibrated quantile regression intervals (P10--P90 covering 80.6\% of actuals) and TreeSHAP-based per-prediction explanations, demonstrating that rigorous academic methodology can translate directly into operational decision-making for inventory management.
+Against DeepAR, PatchTST, and the Temporal Fusion Transformer (TFT), the LightGBM model with 53 engineered features lowers mean absolute error (MAE) by 23.0\%, 15.2\%, and 22.9\%, respectively. Compared with a recursive L1 baseline, MAE falls by 8.5\% (2.633 to 2.411) and directional accuracy rises by 7.8 percentage points (53.6\% to 61.4\%). Ablation shows that direct multi-step transfer contributes the largest gain ($-7.3$\% MAE), while sparsity features add a further 1.3\% reduction, and both sparse ($-4.8$\%) and dense ($-1.1$\%) SKU segments improve at once. Conformal-calibrated P10--P90 intervals cover 80.6\% of actuals, and TreeSHAP explains each prediction, so the method can support inventory decisions.
 
 \end{abstract}
 
@@ -79,7 +85,7 @@ Retail demand forecasting has been extensively studied across multiple academic 
 
 \subsection{Direct vs.\ Recursive Multi-Step Forecasting}
 
-Multi-step forecasting can be performed recursively (iterating single-step predictions) or directly (training separate models for each horizon). While recursive forecasting is computationally efficient, it suffers from error accumulation across horizons \citep{bentaieb1999bias}. Direct forecasting avoids error propagation but requires training $H$ separate models. Recent work has explored hybrid approaches such as the multi-input multi-output (MIMO) strategy \citep{bentaieb2012review}. In this paper, we adopt pure direct forecasting and show that for horizons up to 7 days, the additional computational cost is negligible while accuracy gains are substantial.
+Multi-step forecasting can be performed recursively (iterating single-step predictions) or directly (training separate models for each horizon). While recursive forecasting is computationally efficient, it suffers from error accumulation across horizons \citep{bentaieb2016bias}. Direct forecasting avoids error propagation but requires training $H$ separate models. Recent work has explored hybrid approaches such as the multi-input multi-output (MIMO) strategy \citep{bentaieb2012review}. In this paper, we adopt pure direct forecasting and show that for horizons up to 7 days, the additional computational cost is negligible while accuracy gains are substantial.
 
 \subsection{Intermittent Demand and Sparsity}
 
@@ -107,7 +113,7 @@ Figure~\ref{fig:context} provides an overview of the demand characteristics. The
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{figures/fig1_application_context.png}
+    \includegraphics[width=\textwidth]{fig1_application_context.png}
     \caption{Coffee shop demand characteristics. (a) Representative SKU time series showing high, medium, and low-demand patterns with 7-day rolling means. (b) Distribution of zero-sales proportion across 239 SKU-store pairs. (c) Average demand interval (ADI) distribution. (d) Store-level comparison of average daily sales and zero-day rates.}
     \label{fig:context}
 \end{figure}
@@ -118,7 +124,7 @@ Figure~\ref{fig:context} provides an overview of the demand characteristics. The
 
 \subsection{Overview}
 
-Our forecasting pipeline consists of five stages: (1) feature engineering from raw transaction and weather data, (2) temporal split into training and test periods, (3) training seven independent LightGBM models---one per forecast horizon (T+1 through T+7), (4) post-hoc quantile calibration for uncertainty quantification, and (5) TreeSHAP-based per-prediction explanation. Figure~\ref{fig:arch} illustrates the overall architecture.
+Our forecasting pipeline consists of five stages: (1) feature engineering from raw transaction and weather data, (2) temporal split into training and test periods, (3) training seven independent LightGBM models---one per forecast horizon (T+1 through T+7), (4) post-hoc quantile calibration for uncertainty quantification, and (5) TreeSHAP-based per-prediction explanation.
 
 \subsection{Feature Engineering}
 
@@ -237,14 +243,14 @@ All three deep learning models underperform our gradient-boosted tree model by s
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig1_overall_comparison.png}
+    \includegraphics[width=0.95\textwidth]{fig1_overall_comparison.png}
     \caption{Overall MAE comparison across all methods.}
     \label{fig:overall}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{figures/fig3_horizon_improvement.png}
+    \includegraphics[width=0.85\textwidth]{fig3_horizon_improvement.png}
     \caption{Horizon-level MAE improvement vs.\ recursive baseline.}
     \label{fig:horizon}
 \end{figure}
@@ -279,14 +285,14 @@ Three findings emerge from the ablation study:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{figures/fig2_ablation.png}
+    \includegraphics[width=\textwidth]{fig2_ablation.png}
     \caption{Ablation study: component contributions to overall, sparse, and dense MAE.}
     \label{fig:ablation}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{figures/fig6_direction_and_r2.png}
+    \includegraphics[width=0.9\textwidth]{fig6_direction_and_r2.png}
     \caption{Direction accuracy and R\textsuperscript{2} across methods.}
     \label{fig:direction}
 \end{figure}
@@ -299,7 +305,7 @@ Across the three stores, MAE improvement ranges from 7.2\% to 9.8\%, with no sto
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{figures/fig4_segment_performance.png}
+    \includegraphics[width=0.9\textwidth]{fig4_segment_performance.png}
     \caption{Sparse vs.\ dense segment performance comparison.}
     \label{fig:segment}
 \end{figure}
@@ -345,7 +351,19 @@ The resulting system---featuring quantile-based uncertainty intervals, per-predi
 %====================================================================
 \section*{Acknowledgments}
 
-The author received no external funding for this work.
+This research did not receive any specific grant from funding agencies in the public, commercial, or not-for-profit sectors.
+
+\section*{CRediT authorship contribution statement}
+
+Zhanpeng Qin: Conceptualization, Methodology, Software, Formal Analysis, Investigation, Writing - Original Draft, Writing - Review \& Editing, Visualization, Project Administration.
+
+\section*{Declaration of competing interests}
+
+The author declares that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
+\section*{Data availability}
+
+Raw transaction-level data cannot be shared because of commercial confidentiality. Aggregated daily-level statistics sufficient to reproduce the main experimental results are available from the corresponding author upon reasonable request. Source code is publicly available at \url{https://github.com/qzpthuhhu/eswa-retail-forecasting}.
 
 %====================================================================
 % BIBLIOGRAPHY
@@ -353,52 +371,52 @@ The author received no external funding for this work.
 \bibliographystyle{elsarticle-harv}
 \begin{thebibliography}{99}
 
-\bibitem{bentaieb1999bias}
-Ben~Taieb, S., Atiya, A.F., 1999.
+\bibitem[Ben~Taieb and Atiya(2016)]{bentaieb2016bias}
+Ben~Taieb, S., Atiya, A.F., 2016.
 A bias and variance analysis for multistep-ahead time series forecasting.
-\textit{IEEE Transactions on Neural Networks} 27, 62--76.
+\textit{IEEE Transactions on Neural Networks and Learning Systems} 27, 62--76.
 
-\bibitem{bentaieb2012review}
+\bibitem[Ben~Taieb et~al.(2012)]{bentaieb2012review}
 Ben~Taieb, S., Bontempi, G., Atiya, A.F., Sorjamaa, A., 2012.
 A review and comparison of strategies for multi-step ahead time series forecasting based on the NN5 forecasting competition.
 \textit{Expert Systems with Applications} 39, 7067--7083.
 
-\bibitem{croston1972forecasting}
+\bibitem[Croston(1972)]{croston1972forecasting}
 Croston, J.D., 1972.
 Forecasting and stock control for intermittent demands.
 \textit{Operational Research Quarterly} 23, 289--303.
 
-\bibitem{ke2017lightgbm}
+\bibitem[Ke et~al.(2017)]{ke2017lightgbm}
 Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., Liu, T.Y., 2017.
 LightGBM: A highly efficient gradient boosting decision tree.
 In: \textit{Advances in Neural Information Processing Systems}, pp.\ 3146--3154.
 
-\bibitem{lim2021tft}
+\bibitem[Lim et~al.(2021)]{lim2021tft}
 Lim, B., Ar\i{k}, S.\"O., Loeff, N., Pfister, T., 2021.
 Temporal Fusion Transformers for interpretable multi-horizon time series forecasting.
 \textit{International Journal of Forecasting} 37, 1748--1764.
 
-\bibitem{makridakis2022m5}
+\bibitem[Makridakis et~al.(2022)]{makridakis2022m5}
 Makridakis, S., Spiliotis, E., Assimakopoulos, V., 2022.
 M5 accuracy competition: Results, findings, and conclusions.
 \textit{International Journal of Forecasting} 38, 1346--1364.
 
-\bibitem{nie2023patchtst}
+\bibitem[Nie et~al.(2023)]{nie2023patchtst}
 Nie, Y., Nguyen, N.H., Sinthong, P., Kalagnanam, J., 2023.
 A time series is worth 64 words: Long-term forecasting with transformers.
 In: \textit{Proceedings of ICLR}.
 
-\bibitem{oreshkin2020nbeats}
+\bibitem[Oreshkin et~al.(2020)]{oreshkin2020nbeats}
 Oreshkin, B.N., Carpov, D., Chapados, N., Bengio, Y., 2020.
 N-BEATS: Neural basis expansion analysis for interpretable time series forecasting.
 In: \textit{Proceedings of ICLR}.
 
-\bibitem{salinas2020deepar}
+\bibitem[Salinas et~al.(2020)]{salinas2020deepar}
 Salinas, D., Flunkert, V., Gasthaus, J., Januschowski, T., 2020.
 DeepAR: Probabilistic forecasting with autoregressive recurrent networks.
 \textit{International Journal of Forecasting} 36, 1181--1191.
 
-\bibitem{syntetos2015forecasting}
+\bibitem[Syntetos et~al.(2015)]{syntetos2015forecasting}
 Syntetos, A.A., Babai, Z., Gardner~Jr, E.S., 2015.
 Forecasting intermittent inventory demands: Simple parametric methods vs.\ bootstrapping.
 \textit{Journal of Business Research} 68, 1746--1752.

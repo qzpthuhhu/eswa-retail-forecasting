@@ -1,3 +1,7 @@
 Data Availability Statement
 
-The data used in this study originate from a New York City coffee shop chain. Due to commercial confidentiality agreements, the raw transaction-level data cannot be publicly shared. However, aggregated daily-level statistics sufficient to reproduce the main experimental results will be made available upon reasonable request. The complete source code for model training, evaluation, and figure generation will be deposited in a public GitHub repository upon acceptance.
+The data used in this study come from a New York City coffee shop chain. Raw transaction-level records cannot be shared because of commercial confidentiality. Aggregated daily-level statistics sufficient to reproduce the main experimental results are available from the corresponding author upon reasonable request.
+
+Source code for model training, evaluation, and figure generation is publicly available at:
+
+https://github.com/qzpthuhhu/eswa-retail-forecasting

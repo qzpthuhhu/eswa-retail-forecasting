@@ -1,0 +1,4 @@
+Direct multi-step Tweedie LightGBM cuts MAE 8.5% vs. recursive baseline
+Sparsity features improve sparse (-4.8%) and dense (-1.1%) SKU MAE
+23.0%, 15.2%, and 22.9% lower MAE than DeepAR, PatchTST, and TFT
+Conformal P10-P90 intervals cover 80.6% of actuals; TreeSHAP explains them

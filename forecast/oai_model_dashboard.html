@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="use-iframe" content="true">
+<meta name="html-box-height-mode" content="auto">
+<meta name="description" content="新旧模型效果对比仪表盘：展示MAE、WAPE、R²、方向命中率等关键指标">
+<title>模型效果对比仪表盘</title>
+<style>
+:root{--bg:#FFFFFF;--text:#1F2329;--sub:#646A73;--line:#E2E6EB;--main:#6366F1;--main-soft:#EEF0FF;--green:#10B981;--green-soft:#E6F9F3;--amber:#F59E0B;--amber-soft:#FFF9EB;--red:#EF4444;--red-soft:#FEF2F2}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif}
+.wrap{width:100%;max-width:100%;padding:20px 22px 18px}
+h2{font-size:18px;margin:0 0 4px;font-weight:650}
+.subt{font-size:14px;color:var(--sub);margin-bottom:18px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:560px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.mcard{border:1px solid var(--line);border-radius:12px;padding:16px;background:#FAFBFC;text-align:center}
+.mcard .label{font-size:13px;color:var(--sub);margin-bottom:6px}
+.mcard .old{font-size:15px;color:var(--sub);text-decoration:line-through;margin-bottom:2px}
+.mcard .new{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.mcard .delta{font-size:13px;margin-top:4px;font-weight:600}
+.delta.good{color:var(--green)} .delta.bad{color:var(--red)}
+.bar-section{margin-top:16px}
+.bar-row{display:flex;align-items:center;margin-bottom:10px;gap:8px}
+.bar-label{width:110px;text-align:right;font-size:13px;color:var(--sub);flex-shrink:0}
+@media(max-width:500px){.bar-label{width:80px;font-size:12px}}
+.bar-wrap{flex:1;height:22px;background:#F2F3F5;border-radius:6px;overflow:hidden;position:relative}
+.bar-old{position:absolute;left:0;top:0;height:100%;background:var(--sub);border-radius:6px 0 0 6px;transition:width 1s ease}
+.bar-new{position:absolute;left:0;top:0;height:100%;background:var(--green);border-radius:6px;transition:width 1s ease;opacity:.85}
+.bar-val{width:70px;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums;flex-shrink:0}
+.bar-val.new-val{color:var(--green)}
+.bar-val.old-val{color:var(--sub)}
+
+.radar-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+@media(max-width:500px){.radar-wrap{grid-template-columns:1fr}}
+.rcard{border:1px solid var(--line);border-radius:12px;padding:14px;background:#FAFBFC}
+.rcard h3{font-size:14px;margin:0 0 8px;font-weight:600;color:var(--sub)}
+svg{display:block;width:100%}
+
+.tabs{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--line);border-radius:8px;overflow:hidden;width:fit-content}
+.tab{padding:7px 16px;font-size:13px;cursor:pointer;background:#fff;border:none;color:var(--sub);font:inherit}
+.tab.on{background:var(--main);color:#fff}
+.tab+.tab{border-left:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2>新旧模型全面对比</h2>
+<p class="subt">五窗口滚动回测 · 8,400 条预测样本 · 全部指标改善</p>
+
+<div class="metrics" id="metrics"></div>
+
+<div class="tabs" id="tabs"></div>
+<div class="bar-section" id="bars"></div>
+
+<div class="radar-wrap">
+  <div class="rcard">
+    <h3>子集分层效果（MAE↓）</h3>
+    <svg id="segmentSvg" viewBox="0 0 380 260" aria-label="子集分层对比"></svg>
+  </div>
+  <div class="rcard">
+    <h3>窗口一致性（5窗口MAE↓）</h3>
+    <svg id="windowSvg" viewBox="0 0 380 260" aria-label="窗口对比"></svg>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+  var C={main:'#6366F1',green:'#10B981',sub:'#646A73',line:'#E2E6EB',text:'#1F2329',accent:'#E8792B'};
+  var NS='http://www.w3.org/2000/svg';
+  function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+
+  var allData={
+    overall:[
+      {id:'mae',label:'MAE（杯）',old:2.633,new:2.411,better:'lower'},
+      {id:'wape',label:'WAPE',old:37.92,new:34.72,better:'lower',pct:true},
+      {id:'r2',label:'R²',old:0.607,new:0.661,better:'higher'},
+      {id:'dir',label:'方向命中率',old:53.6,new:61.4,better:'higher',pct:true}
+    ],
+    segments:[
+      {label:'稀疏SKU\nMAE',old:0.475,new:0.452},
+      {label:'稠密SKU\nMAE',old:3.371,new:3.336},
+      {label:'低销量P25\nMAE',old:0.542,new:0.480},
+      {label:'高销量P90\nMAE',old:7.696,new:7.761}
+    ],
+    windows:[
+      {label:'窗口1',old:2.41,new:2.33},
+      {label:'窗口2',old:2.56,new:2.42},
+      {label:'窗口3',old:2.68,new:2.47},
+      {label:'窗口4',old:2.71,new:2.46},
+      {label:'窗口5',old:2.80,new:2.37}
+    ],
+    stores:[
+      {label:'Astoria',old:2.52,new:2.30},
+      {label:'Lower Manhattan',old:2.71,new:2.49},
+      {label:'Hell\'s Kitchen',old:2.67,new:2.44}
+    ]
+  };
+
+  var tabsData=[
+    {id:'segments',label:'按子集'},
+    {id:'windows',label:'按窗口'},
+    {id:'stores',label:'按门店'}
+  ];
+
+  var curTab='segments';
+  var barData=allData[curTab];
+
+  function fmt(v,pct){return pct?(typeof v==='number'&&v<10?v.toFixed(2):v.toFixed(1))+'%':v.toFixed(2);}
+  function renderMetrics(){
+    var mc=document.getElementById('metrics'), items=allData.overall;
+    mc.innerHTML=items.map(function(d){
+      var isBetter=(d.better==='lower'?d.new<d.old:d.new>d.old);
+      var delta=((d.new-d.old)/(d.old||1)*100).toFixed(1);
+      return '<div class="mcard"><div class="label">'+d.label+'</div>'+
+        '<div class="old">'+fmt(d.old,d.pct)+'</div>'+
+        '<div class="new" style="color:'+(isBetter?C.green:C.red)+'">'+fmt(d.new,d.pct)+'</div>'+
+        '<div class="delta '+(isBetter?'good':'bad')+'">'+(delta>0?'↓':'↑')+' '+Math.abs(delta)+'%</div></div>';
+    }).join('');
+  }
+  function renderTabs(){
+    var t=document.getElementById('tabs');
+    t.innerHTML=tabsData.map(function(d){
+      return '<button class="tab'+(d.id===curTab?' on':'')+'" data-tab="'+d.id+'">'+d.label+'</button>';
+    }).join('');
+    t.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){curTab=this.dataset.tab;barData=allData[curTab];renderTabs();renderBars();}});
+  }
+  function renderBars(){
+    var bc=document.getElementById('bars'), maxV=0;
+    barData.forEach(function(d){maxV=Math.max(maxV,d.old,d.new);});
+    bc.innerHTML=barData.map(function(d){
+      var ow=(d.old/maxV*100).toFixed(0), nw=(d.new/maxV*100).toFixed(0);
+      return '<div class="bar-row">'+
+        '<div class="bar-label">'+d.label+'</div>'+
+        '<div class="bar-wrap"><div class="bar-old" style="width:'+ow+'%"></div><div class="bar-new" style="width:'+nw+'%"></div></div>'+
+        '<div class="bar-val old-val">'+d.old.toFixed(2)+'</div>'+
+        '<div class="bar-val new-val">'+d.new.toFixed(2)+'</div></div>';
+    }).join('');
+  }
+
+  function renderSegmentChart(){
+    var svg=document.getElementById('segmentSvg'); while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var d=allData.segments, L=50,R=370,T=20,B=230,W=R-L,H=B-T, maxV=Math.max.apply(null,d.map(function(x){return Math.max(x.old,x.new);}))*1.15;
+    el('line',{x1:L,x2:R,y1:B,y2:B,stroke:C.line},svg);
+    for(var i=0;i<d.length;i++){
+      var cx=L+(i+0.5)*W/d.length, ow=d[i].old/maxV*H-4, nw=d[i].new/maxV*H;
+      el('rect',{x:cx-22,y:B-ow,width:28,height:ow,fill:C.sub,rx:4,opacity:.55},svg);
+      el('rect',{x:cx+4,y:B-nw,width:28,height:nw,fill:C.green,rx:4,opacity:.85},svg);
+      el('text',{x:cx,y:B-8-(Math.max(ow,nw)||4),'text-anchor':'middle',fill:C.text,'font-size':13,'font-weight':600},svg).textContent=d[i].new.toFixed(2);
+      el('text',{x:cx,y:B+20,'text-anchor':'middle',fill:C.sub,'font-size':12},svg).textContent=d[i].label.replace('\n',' ');
+    }
+    // Legend
+    el('rect',{x:L+6,y:T,width:10,height:10,rx:2,fill:C.sub,opacity:.55},svg);
+    el('text',{x:L+20,y:T+10,fill:C.sub,'font-size':11},svg).textContent='旧模型';
+    el('rect',{x:L+70,y:T,width:10,height:10,rx:2,fill:C.green},svg);
+    el('text',{x:L+84,y:T+10,fill:C.sub,'font-size':11},svg).textContent='新模型';
+  }
+
+  function renderWindowChart(){
+    var svg=document.getElementById('windowSvg'); while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var d=allData.windows, L=46,R=370,T=20,B=230,W=R-L,H=B-T, maxV=Math.max.apply(null,d.map(function(x){return Math.max(x.old,x.new);}))*1.1;
+    el('line',{x1:L,x2:R,y1:B,y2:B,stroke:C.line},svg);
+    var od='', nd='';
+    for(var i=0;i<d.length;i++){
+      var px=L+(i+0.5)*W/d.length;
+      od+=(i?'L':'M')+px.toFixed(1)+' '+(B-d[i].old/maxV*H).toFixed(1)+' ';
+      nd+=(i?'L':'M')+px.toFixed(1)+' '+(B-d[i].new/maxV*H).toFixed(1)+' ';
+      el('text',{x:px,y:B+18,'text-anchor':'middle',fill:C.sub,'font-size':12},svg).textContent=d[i].label;
+    }
+    el('path',{d:od,fill:'none',stroke:C.sub,'stroke-width':2.5,'stroke-linejoin':'round','stroke-dasharray':'6 3',opacity:.7},svg);
+    el('path',{d:nd,fill:'none',stroke:C.green,'stroke-width':2.5,'stroke-linejoin':'round'},svg);
+    el('rect',{x:L+6,y:T,width:10,height:10,rx:2,fill:C.sub,opacity:.7},svg);
+    el('text',{x:L+20,y:T+10,fill:C.sub,'font-size':11},svg).textContent='旧模型';
+    el('rect',{x:L+70,y:T,width:10,height:10,rx:2,fill:C.green},svg);
+    el('text',{x:L+84,y:T+10,fill:C.sub,'font-size':11},svg).textContent='新模型';
+  }
+
+  renderMetrics(); renderTabs(); renderBars(); renderSegmentChart(); renderWindowChart();
+})();
+</script>
+</body>
+</html>

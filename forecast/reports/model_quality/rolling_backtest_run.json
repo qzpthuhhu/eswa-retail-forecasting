@@ -1,0 +1,371 @@
+{
+  "run_id": "sparse_production_4616e0b45d763474",
+  "pipeline_version": "direct-tweedie-sparse-v1",
+  "pipeline": "production_sparse",
+  "method": "direct_tweedie_1_3_sparse",
+  "model_name": "Global LightGBM (direct Tweedie + sparse labels)",
+  "candidate_status": "candidate",
+  "candidate_rule": "Aggregate model MAE and WAPE must both beat the best origin-safe baseline",
+  "selected_point_forecast": "pred_lightgbm",
+  "feature_count": 53,
+  "features": [
+    "price",
+    "qty_lag_1",
+    "qty_lag_2",
+    "qty_lag_3",
+    "qty_lag_7",
+    "qty_lag_14",
+    "qty_lag_28",
+    "qty_roll_mean_7d",
+    "qty_roll_std_7d",
+    "qty_roll_mean_14d",
+    "qty_roll_std_14d",
+    "qty_roll_mean_28d",
+    "qty_roll_std_28d",
+    "qty_dow_avg",
+    "sku_share_28d",
+    "day_of_week",
+    "is_weekend",
+    "month",
+    "day_of_month",
+    "week_of_month",
+    "is_month_start",
+    "is_month_end",
+    "season_code",
+    "week_of_season",
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "temperature_2m_mean",
+    "precipitation_sum",
+    "is_rain",
+    "is_snow",
+    "is_clear",
+    "sunshine_duration",
+    "wind_speed_10m_max",
+    "relative_humidity_2m_mean",
+    "is_holiday_detailed",
+    "is_pre_holiday_1d",
+    "is_pre_holiday_3d",
+    "is_post_holiday_1d",
+    "is_long_weekend",
+    "holiday_impact_code",
+    "temp_range",
+    "is_hot",
+    "is_cold",
+    "price_vs_category_avg",
+    "store_id_feature",
+    "product_id_feature",
+    "category_code",
+    "product_type_code",
+    "forecast_horizon",
+    "is_sparse",
+    "zero_rate",
+    "adi",
+    "mean_qty"
+  ],
+  "sparse_sku_count": 77,
+  "data_range": {
+    "start": "2023-01-01",
+    "end": "2023-06-30"
+  },
+  "forecast_horizon_days": 7,
+  "origins": [
+    "2023-05-27",
+    "2023-06-03",
+    "2023-06-10",
+    "2023-06-17",
+    "2023-06-24"
+  ],
+  "backtest_window_count": 5,
+  "generated_at": "2026-10-12T10:00:26.731882+00:00",
+  "prediction_count": 8400,
+  "overall": {
+    "mae": 2.410638897099491,
+    "wape": 0.3471994570768445,
+    "rmse": 3.6355131741746995,
+    "r2": 0.6609679123810714
+  },
+  "coverage_p10_p90": 0.8055952380952381,
+  "training_runs": [
+    {
+      "forecast_origin": "2023-05-27",
+      "method": "direct_tweedie_1_3_sparse",
+      "feature_count": 53,
+      "best_iteration": 209,
+      "quantile_best_iterations": {
+        "pred_p10": 479,
+        "pred_p50": 409,
+        "pred_p90": 90
+      },
+      "conformal_adjustment": 0.007207305825432497,
+      "store_bias_factors": [
+        {
+          "store_id": 3,
+          "store_bias_factor": 1.0719071230042658
+        },
+        {
+          "store_id": 5,
+          "store_bias_factor": 1.1162446694264514
+        },
+        {
+          "store_id": 8,
+          "store_bias_factor": 1.032465811835018
+        }
+      ]
+    },
+    {
+      "forecast_origin": "2023-06-03",
+      "method": "direct_tweedie_1_3_sparse",
+      "feature_count": 53,
+      "best_iteration": 280,
+      "quantile_best_iterations": {
+        "pred_p10": 321,
+        "pred_p50": 240,
+        "pred_p90": 349
+      },
+      "conformal_adjustment": 1.3468482903010592e-14,
+      "store_bias_factors": [
+        {
+          "store_id": 3,
+          "store_bias_factor": 1.1072771790752411
+        },
+        {
+          "store_id": 5,
+          "store_bias_factor": 1.0718743624304135
+        },
+        {
+          "store_id": 8,
+          "store_bias_factor": 1.0238961845863117
+        }
+      ]
+    },
+    {
+      "forecast_origin": "2023-06-10",
+      "method": "direct_tweedie_1_3_sparse",
+      "feature_count": 53,
+      "best_iteration": 258,
+      "quantile_best_iterations": {
+        "pred_p10": 426,
+        "pred_p50": 274,
+        "pred_p90": 504
+      },
+      "conformal_adjustment": 5.6955605857155344e-27,
+      "store_bias_factors": [
+        {
+          "store_id": 3,
+          "store_bias_factor": 1.0843888434804732
+        },
+        {
+          "store_id": 5,
+          "store_bias_factor": 1.061379412497439
+        },
+        {
+          "store_id": 8,
+          "store_bias_factor": 1.093298557083718
+        }
+      ]
+    },
+    {
+      "forecast_origin": "2023-06-17",
+      "method": "direct_tweedie_1_3_sparse",
+      "feature_count": 53,
+      "best_iteration": 591,
+      "quantile_best_iterations": {
+        "pred_p10": 228,
+        "pred_p50": 341,
+        "pred_p90": 991
+      },
+      "conformal_adjustment": 0.029955239055938974,
+      "store_bias_factors": [
+        {
+          "store_id": 3,
+          "store_bias_factor": 1.0278808989210817
+        },
+        {
+          "store_id": 5,
+          "store_bias_factor": 1.0276992734343282
+        },
+        {
+          "store_id": 8,
+          "store_bias_factor": 1.0776656553748998
+        }
+      ]
+    },
+    {
+      "forecast_origin": "2023-06-24",
+      "method": "direct_tweedie_1_3_sparse",
+      "feature_count": 53,
+      "best_iteration": 231,
+      "quantile_best_iterations": {
+        "pred_p10": 540,
+        "pred_p50": 544,
+        "pred_p90": 333
+      },
+      "conformal_adjustment": 1.0272246026762466e-15,
+      "store_bias_factors": [
+        {
+          "store_id": 3,
+          "store_bias_factor": 1.0514902048593318
+        },
+        {
+          "store_id": 5,
+          "store_bias_factor": 1.0429154396342186
+        },
+        {
+          "store_id": 8,
+          "store_bias_factor": 1.0345202806752352
+        }
+      ]
+    }
+  ],
+  "source_hashes": {
+    "Coffee Shop Sales.xlsx": "287d06d19f7a832d48f1deea7b149836fb32d591010f060bdcf8d1959653bfe1",
+    "nyc_weather_2023_h1.csv": "114d17a5c0993ade0ccdb99ee46971cfe5e627473f0aad7c75155382d5249f05"
+  },
+  "quantile_levels": {
+    "pred_p10": 0.1,
+    "pred_p50": 0.5,
+    "pred_p90": 0.9
+  },
+  "parameters": {
+    "objective": "tweedie",
+    "n_estimators": 1000,
+    "learning_rate": 0.03,
+    "num_leaves": 63,
+    "max_depth": -1,
+    "min_child_samples": 20,
+    "subsample": 0.9,
+    "subsample_freq": 1,
+    "colsample_bytree": 0.9,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.1,
+    "random_state": 42,
+    "n_jobs": 1,
+    "verbosity": -1,
+    "tweedie_variance_power": 1.3
+  },
+  "store_bias_calibration": {
+    "method": "store aggregate actual-to-predicted ratio",
+    "calibration_window_days": 7,
+    "shrinkage_toward_one": 0.5,
+    "minimum_factor": 0.85,
+    "maximum_factor": 1.2,
+    "fallback_for_unseen_store": 1.0,
+    "applies_to": [
+      "pred_lightgbm",
+      "pred_p10",
+      "pred_p50",
+      "pred_p90"
+    ]
+  },
+  "interval_calibration": {
+    "method": "split conformalized quantile regression",
+    "target_coverage": 0.8,
+    "calibration_window_days": 7,
+    "score": "max(pred_p10 - actual, actual - pred_p90)",
+    "finite_sample_correction": true
+  },
+  "quantile_parameters": {
+    "objective": "quantile",
+    "base_parameters": {
+      "n_estimators": 1000,
+      "learning_rate": 0.03,
+      "num_leaves": 63,
+      "max_depth": -1,
+      "min_child_samples": 20,
+      "subsample": 0.9,
+      "subsample_freq": 1,
+      "colsample_bytree": 0.9,
+      "reg_alpha": 0.05,
+      "reg_lambda": 0.1,
+      "random_state": 42,
+      "n_jobs": 1,
+      "verbosity": -1
+    }
+  },
+  "prediction_explanations": {
+    "method": "TreeSHAP with exact Tweedie log-link transformation",
+    "additivity_target": "pred_lightgbm_raw",
+    "unit": "cups",
+    "additivity_tolerance": 1e-06,
+    "row_count": 8400,
+    "contribution_count": 445200,
+    "features_per_prediction": 53,
+    "maximum_absolute_additivity_error": 7.460698725481052e-14,
+    "postprocessing": "pred_lightgbm_model = max(0, pred_lightgbm_raw); pred_lightgbm = pred_lightgbm_model * the pre-origin store bias factor; adjustments are stored separately from SHAP"
+  },
+  "scenario_simulation": {
+    "method": "controlled LightGBM re-scoring",
+    "baseline": {
+      "temperature_id": "observed",
+      "rain_id": "observed",
+      "holiday_id": "observed"
+    },
+    "temperature_options": [
+      {
+        "id": "cooler_5c",
+        "label": "\u964d\u6e29 5\u00b0C",
+        "delta_c": -5.0
+      },
+      {
+        "id": "observed",
+        "label": "\u539f\u59cb\u5929\u6c14",
+        "delta_c": 0.0
+      },
+      {
+        "id": "warmer_5c",
+        "label": "\u5347\u6e29 5\u00b0C",
+        "delta_c": 5.0
+      }
+    ],
+    "rain_options": [
+      {
+        "id": "dry",
+        "label": "\u65e0\u964d\u96e8",
+        "precipitation_mm": 0.0
+      },
+      {
+        "id": "observed",
+        "label": "\u539f\u59cb\u964d\u96e8",
+        "precipitation_mm": null
+      },
+      {
+        "id": "heavy_20mm",
+        "label": "\u5f3a\u964d\u96e8 20 mm",
+        "precipitation_mm": 20.0
+      }
+    ],
+    "holiday_options": [
+      {
+        "id": "ordinary_day",
+        "label": "\u666e\u901a\u65e5"
+      },
+      {
+        "id": "observed",
+        "label": "\u539f\u59cb\u8282\u5047\u65e5"
+      },
+      {
+        "id": "long_weekend",
+        "label": "\u957f\u5468\u672b"
+      }
+    ],
+    "combination_count": 27,
+    "row_count": 226800,
+    "scope": "Re-scores one prediction while holding historical demand, price, sparse labels, other weather inputs, and store calibration fixed.",
+    "causal": false
+  },
+  "artifacts": {
+    "predictions": "reports/model_quality/rolling_backtest_predictions.csv",
+    "shap_contributions": "reports/model_quality/rolling_backtest_shap.csv.gz",
+    "scenario_responses": "reports/model_quality/rolling_backtest_scenarios.csv.gz",
+    "quality_report": "reports/model_quality/rolling_backtest_quality.csv"
+  },
+  "limitations": [
+    "P10/P90 use split conformal calibration for marginal 80% coverage.",
+    "Coverage is not guaranteed for each store, SKU, or horizon day.",
+    "Sparse labels use only data before the first backtest origin.",
+    "The retrospective backtest covers five fixed seven-day origins.",
+    "TreeSHAP explains model association, not causal business impact.",
+    "What-if outputs are controlled model responses, not causal estimates."
+  ]
+}

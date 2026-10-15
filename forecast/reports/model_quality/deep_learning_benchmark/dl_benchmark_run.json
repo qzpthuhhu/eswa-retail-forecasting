@@ -1,0 +1,13 @@
+{
+  "run_id": "20261013T120121Z",
+  "version": "dl-benchmark-v1",
+  "timestamp": "2026-10-13T12:01:21.787145+00:00",
+  "backtest_windows": 5,
+  "prediction_horizon": 7,
+  "models": [
+    "deepar",
+    "patchtst",
+    "tft"
+  ],
+  "cpu_only": true
+}

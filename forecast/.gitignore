@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Model binaries (regenerable from source code)
+models/
+*.pkl
+*.joblib
+
+# Data archives
+*.zip
+
+# Temp files
+_tmp_*
+*.ndjson
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/

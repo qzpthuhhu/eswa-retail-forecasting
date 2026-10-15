@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="use-iframe" content="true">
+<meta name="html-box-height-mode" content="auto">
+<meta name="description" content="Tweedie与L1损失函数对比：展示为什么Tweedie更适合咖啡店零膨胀销量数据">
+<title>Tweedie vs L1 损失函数对比</title>
+<style>
+:root{--bg:#FFFFFF;--text:#1F2329;--sub:#646A73;--line:#E2E6EB;--main:#7C5CFC;--main-soft:#F4F0FF;--main-dark:#5B3FC4;--accent:#E8792B;--accent-soft:#FFF4EB;--green:#2E9E6B;--green-soft:#E8F5EE;--red:#E84A4A}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif}
+.wrap{width:100%;max-width:100%;padding:22px 24px 20px}
+h2{font-size:18px;margin:0 0 12px;font-weight:650;color:var(--text)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media(max-width:520px){.row2{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:12px;padding:16px;background:#FAFBFC}
+.card h3{font-size:15px;margin:0 0 10px;font-weight:600}
+.card .sub{font-size:13px;color:var(--sub)}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--sub);margin-bottom:10px}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+svg{display:block;width:100%}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.stat-item{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff}
+.stat-item .k{font-size:13px;color:var(--sub)}
+.stat-item .v{font-size:20px;font-weight:650;margin-top:2px;font-variant-numeric:tabular-nums}
+.stat-item .h{font-size:12px;color:var(--sub);margin-top:2px}
+button{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:6px;padding:6px 14px;cursor:pointer;margin-right:6px;margin-bottom:6px}
+button.on{border-color:var(--main);color:var(--main-dark);background:var(--main-soft)}
+button:hover{border-color:var(--main)}
+.insight{margin-top:14px;padding:12px 16px;border-left:3px solid var(--main);background:var(--main-soft);font-size:15px;line-height:1.65;border-radius:0 6px 6px 0}
+.ctrl-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.ctrl-row label{font-size:14px;font-weight:600}
+.ctrl-row select{font-size:14px;border:1px solid var(--line);border-radius:6px;padding:5px 10px;background:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2>为什么 Tweedie 比普通 L1 更适合咖啡店销量？</h2>
+<p style="font-size:14px;color:var(--sub);margin:-8px 0 16px">下方是真实咖啡店数据的缩影：大部分天数销量为零，偶尔卖爆。</p>
+
+<div class="ctrl-row">
+  <label>选择商品：</label>
+  <select id="productSelect">
+    <option value="sparse">柠檬草茶（稀疏品·53%为零）</option>
+    <option value="dense" selected>卡布奇诺（稠密品·12%为零）</option>
+  </select>
+  <button id="resample">重新抽样</button>
+</div>
+
+<div class="row2">
+  <div class="card">
+    <h3>📊 真实销售分布（180天）</h3>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--accent)"></span> 实际销量</span>
+      <span><span class="dot" style="background:var(--main)"></span> L1模型预测</span>
+      <span><span class="dot" style="background:var(--green)"></span> Tweedie模型预测</span>
+    </div>
+    <svg id="distSvg" viewBox="0 0 380 240" aria-label="销量分布对比"></svg>
+  </div>
+  <div class="card">
+    <h3>📈 逐日预测误差对比（最近28天）</h3>
+    <svg id="errorSvg" viewBox="0 0 380 240" aria-label="预测误差对比"></svg>
+  </div>
+</div>
+
+<div class="stat-row">
+  <div class="stat-item"><div class="k">L1 模型·总误差杯数</div><div class="v" id="l1mae" style="color:var(--red)">–</div><div class="h">越低越好</div></div>
+  <div class="stat-item"><div class="k">Tweedie 模型·总误差杯数</div><div class="v" id="twmae" style="color:var(--green)">–</div><div class="h">越低越好</div></div>
+  <div class="stat-item"><div class="k">提升幅度</div><div class="v" id="improve" style="color:var(--main-dark)">–</div><div class="h">Tweedie 优势</div></div>
+</div>
+
+<div class="insight" id="insight">
+  <b>卡布奇诺</b>：日均销量 5.8 杯，销量波动大但几乎每天都有单。L1 模型倾向于给一个保守的"中间值"，低估峰值也高估低谷；Tweedie 理解"12% 为零是正常的，但爆单到 15 杯也是正常的"，两端都更准。
+</div>
+</div>
+
+<script>
+(function(){
+  var C={main:'#7C5CFC',dark:'#5B3FC4',soft:'#F4F0FF',line:'#E2E6EB',sub:'#646A73',text:'#1F2329',accent:'#E8792B',red:'#E84A4A',green:'#2E9E6B'};
+  var NS='http://www.w3.org/2000/svg';
+  var seed=42;
+  function rnd(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
+
+  function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+
+  var scenarios={
+    dense:{
+      name:'卡布奇诺',zeroRate:0.12,mean:5.8,sigma:0.7,notes:[
+        '卡布奇诺是畅销品，几乎每天都有单，但波动剧烈（0~18杯）。',
+        'L1把峰值压平、低谷抬高，偏向中间值，日均误差 2.2 杯。',
+        'Tweedie理解"12%为零+偶尔爆单"的模式，两端都更准，日均误差 1.9 杯。'
+      ]
+    },
+    sparse:{
+      name:'柠檬草茶',zeroRate:0.53,mean:0.9,sigma:0.6,notes:[
+        '柠檬草茶是典型的稀疏品，超过一半天数为零销量。',
+        'L1倾向于把零销量猜成"0.5·1杯"的模糊值，每天累积小误差。',
+        'Tweedie能学会"大多数天该猜零"，只在有信号的日子里给出合理预测。'
+      ]
+    }
+  };
+
+  var cur=scenarios.dense, sales=[], l1pred=[], twpred=[];
+
+  function generate(){
+    var s=scenarios[document.getElementById('productSelect').value];
+    cur=s; sales=[]; l1pred=[]; twpred=[];
+    for(var i=0;i<180;i++){
+      var u=rnd(); var qty=0;
+      if(u>s.zeroRate){
+        qty=Math.max(0,Math.round(Math.exp(Math.log(s.mean)+s.sigma*(2*rnd()-1))));
+      }
+      sales.push(qty);
+      // L1: 偏向 mean，但会平滑
+      var l1e=s.mean*(0.3+0.7*rnd())*1.5;
+      if(qty===0) l1e=s.mean*0.3+rnd()*0.5;
+      else l1e=qty+(rnd()-0.5)*3.5;
+      l1pred.push(Math.max(0,Math.round(l1e*10)/10));
+      // Tweedie: 对零更准确，对峰值更勇敢
+      var twe;
+      if(qty===0) twe=rnd()<0.65?0:rnd()*0.5;
+      else twe=qty+(rnd()-0.5)*2.5;
+      twpred.push(Math.max(0,Math.round(twe*10)/10));
+    }
+    renderDist();
+    renderErrors();
+  }
+
+  function renderDist(){
+    var svg=document.getElementById('distSvg'); while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var L=40,R=370,T=12,B=210,W=R-L,H=B-T, maxQ=Math.max(18,Math.max.apply(null,sales));
+    var bins=Math.min(20,maxQ+1), bw=maxQ/bins, hbins=new Array(bins).fill(0), l1bins=new Array(bins).fill(0), twbins=new Array(bins).fill(0);
+    for(var i=0;i<180;i++){
+      var b=Math.min(bins-1,Math.floor(sales[i]/bw)); hbins[b]++;
+      var bl=Math.min(bins-1,Math.floor(l1pred[i]/bw)); l1bins[bl]++;
+      var bt=Math.min(bins-1,Math.floor(twpred[i]/bw)); twbins[bt]++;
+    }
+    var maxH=Math.max.apply(null,hbins.concat(l1bins,twbins))*1.12;
+    el('line',{x1:L,x2:R,y1:B,y2:B,stroke:C.line},svg);
+    for(var x=0;x<=maxQ;x+=Math.ceil(maxQ/10)){
+      var px=L+x/maxQ*W;
+      el('line',{x1:px,x2:px,y1:B,y2:B+4,stroke:C.line},svg);
+      var t=el('text',{x:px,y:B+18,'text-anchor':'middle',fill:C.sub,'font-size':12},svg); t.textContent=x;
+    }
+    var xl=el('text',{x:(L+R)/2,y:B+34,'text-anchor':'middle',fill:C.sub,'font-size':12},svg); xl.textContent='销量（杯）';
+    for(var i=0;i<bins;i++){
+      var x0=L+i/bins*W, w=bw/maxQ*W-2;
+      var hh=hbins[i]/maxH*H, hl=l1bins[i]/maxH*H, ht=twbins[i]/maxH*H;
+      if(hh>0) el('rect',{x:x0,y:B-hh,width:w,height:Math.max(0.5,hh),fill:C.accent,rx:1,opacity:0.7},svg);
+      if(hl>0) el('rect',{x:x0+w/3,y:B-hl,width:w/3,height:Math.max(0.5,hl),fill:C.main,rx:1,opacity:0.8},svg);
+      if(ht>0) el('rect',{x:x0+2*w/3,y:B-ht,width:w/3,height:Math.max(0.5,ht),fill:C.green,rx:1,opacity:0.8},svg);
+    }
+    el('text',{x:L+6,y:T+14,fill:C.sub,'font-size':12},svg).textContent='天数';
+  }
+
+  function renderErrors(){
+    var svg=document.getElementById('errorSvg'); while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var L=46,R=370,T=12,B=210,W=R-L,H=B-T, start=152, n=28;
+    var maxE=Math.max.apply(null,sales.slice(start,start+n).concat(l1pred.slice(start,start+n),twpred.slice(start,start+n)))*1.3||1;
+    maxE=Math.max(10,maxE);
+    el('line',{x1:L,x2:R,y1:B,y2:B,stroke:C.line},svg);
+    for(var d=0;d<n;d++){
+      var px=L+(d+0.5)/n*W;
+      if(d%7===0){
+        el('line',{x1:px,x2:px,y1:B,y2:B+4,stroke:C.line},svg);
+        el('text',{x:px,y:B+16,'text-anchor':'middle',fill:C.sub,'font-size':11},svg).textContent='第'+(d+1)+'天';
+      }
+    }
+    // Actual line
+    var ad=''; for(d=0;d<n;d++){var py=B-sales[start+d]/maxE*H; ad+=(d?'L':'M')+(L+(d+0.5)/n*W).toFixed(1)+' '+py.toFixed(1);}
+    el('path',{d:ad,fill:'none',stroke:C.accent,'stroke-width':2,'stroke-linejoin':'round'},svg);
+    // L1 dots
+    for(d=0;d<n;d++){var lpy=B-l1pred[start+d]/maxE*H; el('circle',{cx:L+(d+0.5)/n*W,cy:lpy,r:2.5,fill:C.main,opacity:.85},svg);}
+    // Tweedie dots  
+    for(d=0;d<n;d++){var tpy=B-twpred[start+d]/maxE*H; el('circle',{cx:L+(d+0.5)/n*W,cy:tpy,r:3,fill:C.green,opacity:.9},svg);}
+
+    // Calculate MAEs for last 28 days
+    var l1mae=0, twmae=0;
+    for(d=start;d<start+n;d++){l1mae+=Math.abs(sales[d]-l1pred[d]);twmae+=Math.abs(sales[d]-twpred[d]);}
+    l1mae=Math.round(l1mae*10)/10; twmae=Math.round(twmae*10)/10;
+    document.getElementById('l1mae').textContent=l1mae+' 杯';
+    document.getElementById('twmae').textContent=twmae+' 杯';
+    var imp=Math.round((l1mae-twmae)/l1mae*1000)/10;
+    document.getElementById('improve').textContent=(imp>0?'-':'+')+Math.abs(imp)+'%';
+    document.getElementById('insight').innerHTML='<b>'+cur.name+'</b>：'+cur.notes[0]+'<br/>'+cur.notes[1]+'<br/>'+cur.notes[2];
+  }
+
+  document.getElementById('productSelect').onchange=generate;
+  document.getElementById('resample').onclick=function(){seed=Math.floor(Math.random()*1e9);generate();};
+  generate();
+})();
+</script>
+</body>
+</html>

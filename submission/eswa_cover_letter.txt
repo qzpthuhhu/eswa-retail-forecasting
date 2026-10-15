@@ -10,7 +10,7 @@ ESWA's emphasis on applied AI with substantive real-world validation makes it th
 
 What makes this contribution novel?
 
-1. On a small daily panel (240 store-product series, 181 days), a gradient-boosted tree model with 53 engineered features has lower MAE than DeepAR, PatchTST, and TFT, by 23.0%, 15.2%, and 22.9%. The comparison is for this short-history regime. The manuscript distinguishes it from large-scale retail gradient boosting (Long et al., 2025) and from aftermarket intermittent feature engineering (Nathan et al., 2026).
+1. On a small daily panel (240 store-product series, 181 days), DeepAR, PatchTST, and TFT have 23.0%, 15.2%, and 22.9% higher MAE than a gradient-boosted tree model with 53 engineered features. The comparison is for this short-history regime. The manuscript distinguishes it from large-scale retail gradient boosting (Long et al., 2025) and from aftermarket intermittent feature engineering (Nathan et al., 2026).
 
 2. I introduce a lightweight alternative to segment-specific modeling. Injecting four per-SKU sparsity statistics into one global model improves both sparse (-4.8% MAE) and dense (-1.1% MAE) predictions relative to one direct model. On overall MAE, R^2, and direction hit, that model beats a sparse/dense split. The split remains better on sparse MAE (0.432 versus 0.452). Pooled WAPE for the proposed model is 0.347, which is lower than Croston, SBA, and TSB (0.404-0.405) on the same origins. Overall WAPE for the other gradient-boosted variants was not recomputed. MAE is the primary metric.
 

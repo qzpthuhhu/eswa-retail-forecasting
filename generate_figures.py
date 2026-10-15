@@ -3,7 +3,6 @@ Generate publication-quality figures for the SCI paper:
 "When Feature Engineering Outperforms Deep Learning:
  Sparsity-Aware Direct Multi-Step Forecasting for Small-Scale Retail Demand"
 """
-import pandas as pd
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -12,7 +11,7 @@ import matplotlib.ticker as ticker
 
 from pathlib import Path
 
-OUT = Path("/Users/bytedance/Documents/门店预测kaggle数据/draft_e7b169ef_folder/figures")
+OUT = Path(__file__).resolve().parent / "figures"
 OUT.mkdir(exist_ok=True)
 
 # --- Style setup for Q1 journal (IEEE-like) ---
@@ -81,7 +80,7 @@ for i, (bar, v, key) in enumerate(zip(bars, vals, color_keys)):
 ax.set_xticks(range(len(methods)))
 ax.set_xticklabels(names, rotation=15, ha="right")
 ax.set_ylabel("Mean Absolute Error (MAE)")
-ax.set_title("Figure 1: Overall MAE Comparison Across Methods")
+ax.set_title("Overall MAE Comparison Across Methods")
 ax.set_ylim(0, 3.4)
 ax.grid(axis="y", alpha=0.3, linestyle="--")
 ax.spines["top"].set_visible(False)
@@ -133,7 +132,7 @@ for ax_idx, (title, idx) in enumerate(zip(titles, indices)):
     else:
         ax.set_ylim(3.25, 3.70)
 
-fig.suptitle("Figure 2: Ablation Study — Component Contributions", fontsize=13, fontweight="bold", y=1.02)
+fig.suptitle("Ablation Study: Component Contributions", fontsize=13, fontweight="bold", y=1.02)
 fig.tight_layout()
 fig.savefig(OUT / "fig2_ablation.png")
 plt.close(fig)
@@ -142,33 +141,8 @@ print("Figure 2 saved.")
 # ============================================================
 # FIGURE 3: Horizon-level improvement
 # ============================================================
-# Load predictions to compute per-horizon metrics
-predictions = pd.read_csv(
-    "/Users/bytedance/Documents/门店预测kaggle数据/reports/model_quality/rolling_backtest_predictions.csv"
-)
-
-# Filter for recursive_l1 and plus_sparsity_labels
-rec = predictions[predictions["method"] == "recursive_l1"]
-sparse = predictions[predictions["method"] == "plus_sparsity_labels"]
-
-horizons = list(range(1, 8))
-mae_rec = []
-mae_sparse = []
-for h in horizons:
-    col = f"h{h}"  # target column
-    pred_col = f"pred_h{h}"  # prediction column equivalent
-    # Find actual prediction columns
-    mask_r = rec[rec["forecast_horizon"] == h] if "forecast_horizon" in rec.columns else None
-    mask_s = sparse[sparse["forecast_horizon"] == h] if "forecast_horizon" in sparse.columns else None
-
-# Let me read the predictions file structure first
-print("Prediction columns:", predictions.columns.tolist())
-print("Methods in predictions:", predictions["method"].unique())
-# Get horizon values
-if "horizon" in predictions.columns or "forecast_horizon" in predictions.columns:
-    hcol = "forecast_horizon" if "forecast_horizon" in predictions.columns else "horizon"
-    print("Horizon values:", predictions[hcol].unique())
-
+# The recursive-baseline predictions are not in the archive, so this
+# panel keeps the reported horizon improvements rather than recomputing them.
 fig, ax = plt.subplots(figsize=(8, 4.5))
 horizons_plot = [1, 2, 3, 4, 5, 6, 7]
 # From paper data: improvement monotonically increases with horizon
@@ -185,7 +159,7 @@ for h, p in zip(horizons_plot, improvement_pct):
 
 ax.set_xlabel("Forecast Horizon (Days Ahead)")
 ax.set_ylabel("MAE Improvement vs. Recursive Baseline (%)")
-ax.set_title("Figure 3: Horizon-Level MAE Improvement")
+ax.set_title("Horizon-Level MAE Improvement")
 ax.set_xticks(horizons_plot)
 ax.set_xticklabels([f"T+{h}" for h in horizons_plot])
 ax.set_ylim(0, 16)
@@ -237,7 +211,7 @@ for bars in [bars1, bars2]:
 ax.set_xticks(x)
 ax.set_xticklabels(categories)
 ax.set_ylabel("MAE")
-ax.set_title("Figure 4: Sparse vs. Dense Segment Performance")
+ax.set_title("Sparse vs. Dense Segment Performance")
 ax.legend(loc="upper left", frameon=True, fancybox=True, framealpha=0.9)
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
@@ -272,7 +246,7 @@ ax.fill_between(windows, recursive_mae, ours_mae, alpha=0.08, color=COLORS["ours
 
 ax.set_xlabel("Rolling Backtest Window")
 ax.set_ylabel("MAE")
-ax.set_title("Figure 5: Per-Window Stability (5 Rolling Origins)")
+ax.set_title("Per-Window Stability (5 Rolling Origins)")
 ax.set_xticks(windows)
 ax.set_xticklabels([f"Window {w}" for w in windows])
 ax.legend(loc="upper right", frameon=True)
@@ -331,7 +305,7 @@ ax2.grid(axis="y", alpha=0.3, linestyle="--")
 ax2.spines["top"].set_visible(False)
 ax2.spines["right"].set_visible(False)
 
-fig.suptitle("Figure 6: Direction Accuracy and R² Across Methods", fontsize=13,
+fig.suptitle("Direction Accuracy and R² Across Methods", fontsize=13,
              fontweight="bold", y=1.02)
 fig.tight_layout()
 fig.savefig(OUT / "fig6_direction_and_r2.png")

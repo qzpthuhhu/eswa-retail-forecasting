@@ -18,9 +18,9 @@ This file is a guide for the person uploading. Do not upload the checklist itsel
 
   | Characters | Highlight |
   | ---: | --- |
-  | 71 | Direct multi-step Tweedie LightGBM cuts MAE 8.5% vs. recursive baseline |
+  | 71 | Direct multi-step Tweedie LightGBM cuts MAE 8.4% vs. recursive baseline |
   | 66 | Sparsity features improve sparse (-4.8%) and dense (-1.1%) SKU MAE |
-  | 64 | 23.0%, 15.2%, and 22.9% lower MAE than DeepAR, PatchTST, and TFT |
+  | 65 | DeepAR, PatchTST, and TFT have 23.0%, 15.2%, and 22.9% higher MAE |
   | 64 | Pooled WAPE 0.347 beats Croston, SBA, and TSB on aligned origins |
   | 74 | Conformal P10-P90 intervals cover 80.6% of actuals; TreeSHAP explains them |
 
@@ -34,7 +34,7 @@ This file is a guide for the person uploading. Do not upload the checklist itsel
 | `eswa_manuscript.tex` | Identified author record. Keep this off the review upload. |
 | `eswa_manuscript_anonymous.tex` / `.pdf` | Manuscript for reviewers. |
 | `eswa_title_page.tex` / `.txt` / `.pdf` | Author, affiliation, email, ORCID, acknowledgments, funding, competing interests, CRediT, and the code URL. |
-| `eswa_highlights.txt` | Four highlights, ready to paste. |
+| `eswa_highlights.txt` | Five highlights, ready to paste. |
 | `eswa_cover_letter.txt` | Sole-author letter (I / my). |
 | `eswa_credit_statement.txt` | CRediT for Zhanpeng Qin. |
 | `eswa_declaration_of_interest.txt` and `.docx` | Singular "The author declares..." with the nothing-to-declare box marked. |
@@ -46,7 +46,7 @@ This file is a guide for the person uploading. Do not upload the checklist itsel
 1. **Cover letter.** Paste or upload `eswa_cover_letter.txt`.
 2. **Title page.** Upload `submission/eswa_title_page.pdf` (source: `eswa_title_page.tex`). This page carries the author name and is not part of the review file.
 3. **Anonymized manuscript.** Upload `submission/eswa_manuscript_anonymous.pdf` as the manuscript PDF, and the LaTeX source below with it. Do not upload `eswa_manuscript.tex`.
-4. **Highlights.** Paste the four lines from `eswa_highlights.txt` into the highlights box.
+4. **Highlights.** Paste the five lines from `eswa_highlights.txt` into the highlights box.
 5. **CRediT statement.** Paste `eswa_credit_statement.txt`.
 6. **Declaration of competing interests.** Upload `eswa_declaration_of_interest.docx`. Editorial Manager prefers the Word file from the Elsevier declarations tool (https://declarations.elsevier.com/). The docx here is the standard nothing-to-declare statement in the singular. If EM rejects it, regenerate that form in the tool and select no competing interests. `eswa_declaration_of_interest.txt` is the same text.
 7. **Data availability statement.** Paste `eswa_data_availability.txt`. It includes `https://github.com/qzpthuhhu/eswa-retail-forecasting`. The anonymized manuscript does not include that URL, because the account name can identify the author. In the review file the statement is: raw data cannot be shared due to commercial confidentiality; aggregated statistics are available upon reasonable request; code will be made available upon publication.
